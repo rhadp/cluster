@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+source venv/bin/activate
+set -e
+
+# Create a devspaces namespace
+USER_NAME=$1
+if [ -z "$USER_NAME" ]; then
+    echo "Usage: $0 <user_name>"
+    exit 1
+fi
+
+NAMESPACE="$USER_NAME-devspaces"
+echo "NAMESPACE: $NAMESPACE"
+
+
+
+oc create -f - <<-EOF
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: $NAMESPACE
+  labels:
+    app.kubernetes.io/part-of: che.eclipse.org
+    app.kubernetes.io/component: workspaces-namespace
+  annotations:
+    che.eclipse.org/username: $USER_NAME
+EOF
+
+oc adm policy add-role-to-user admin $USER_NAME -n $NAMESPACE

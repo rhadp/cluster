@@ -25,23 +25,29 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: platform-admin-role
+  name: pipelines-access-role
   labels:
     app.kubernetes.io/part-of: rhas-platform
 rules:
-  - apiGroups: [""]
+  - apiGroups: ["tekton.dev"]
     resources:
-      - serviceaccounts
+      - pipelines
+      - pipelineruns
+      - taskruns
     verbs:
       - get
       - list
       - watch
-  - apiGroups: ["rbac.authorization.k8s.io"]
+  - apiGroups: ["pipelinesascode.tekton.dev"]
     resources:
-      - roles
-      - rolebindings
-      - clusterroles
-      - clusterrolebindings
+      - repositories
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: [""]
+    resources:
+      - services
     verbs:
       - get
       - list
