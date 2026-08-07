@@ -1,0 +1,86 @@
+
+- name: generate password hash for admin user
+  shell: >-
+    htpasswd -nb "{{ default_admin_user }}" "{{ default_admin_password }}"|cut -d: -f2
+  register: default_line
+  when:
+    - default_admin_password is defined
+
+- name: set fact admin user password
+  set_fact:
+    admin_password_hash: "{{ default_line.stdout }}"
+  when:
+    - default_admin_password is defined
+    - default_line is succeeded
+
+- name: generate password hash for nobody user
+  shell: >-
+    htpasswd -nb "{{ default_nobody_user }}" "{{ default_nobody_password }}"|cut -d: -f2
+  register: default_line
+  when:
+    - default_nobody_password is defined
+
+- name: set fact nobody user password
+  set_fact:
+    default_nobody_password_hash: "{{ default_line.stdout }}"
+  when:
+    - default_nobody_password is defined
+    - default_line is succeeded
+
+- name: setup rbac  
+  import_tasks: setup_rbac.yml
+
+- name: setup keycloak
+  import_tasks: setup_keycloak.yml
+
+# prepare for the htpasswd oauth provider
+
+- name: generate htpasswd file
+  template:
+    src: "htpasswd.j2"
+    dest: "roles/setup-auth/files/users.htpasswd"
+    owner: "{{ ansible_user_id }}"
+    mode: 0664
+
+- name: create htpasswd secret from htpasswd file
+  ignore_errors: true # can fail if secret already exists
+  shell: |
+    oc create secret generic htpasswd-secret \
+      --from-file=htpasswd=roles/setup-auth/files/users.htpasswd \
+      -n openshift-config \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+# configure OAuth
+
+- name: update oauth configuration
+  k8s:
+    merge_type:
+      - strategic-merge
+      - merge
+    definition: "{{ lookup('template', 'openshift-oauth-config.yml.j2') | from_yaml }}"
+    state: present
+    kubeconfig: "{{ local_kubeconfig_file }}"
+
+- name: pause to allow oauth to settle
+  pause:
+    seconds: 300
+
+# remove the kubeadmin user secret and self-provisioner cluster role binding
+- name: remove kubeadmin user secret
+  when: remove_kubeadmin | bool == true
+  k8s:
+    api_version: v1
+    kind: Secret
+    namespace: kube-system
+    name: kubeadmin
+    state: absent
+    kubeconfig: "{{ local_kubeconfig_file }}"
+    
+# cleanup temp files
+- name: remove the htpasswd file
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "roles/setup-auth/files/users.htpasswd"
+

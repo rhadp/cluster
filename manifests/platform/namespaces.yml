@@ -1,0 +1,12 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: auto-platform
+  labels:
+    argocd.argoproj.io/managed-by: openshift-gitops
+    argocd.argoproj.io/project: rhas
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  finalizers:
+    - kubernetes

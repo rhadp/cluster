@@ -1,0 +1,49 @@
+---
+# Default values for the role. To override, add them to the inventory files (main.yml, platform.yml).
+
+#------------------------------------------------------------------------------------------------
+# aws defaults
+#------------------------------------------------------------------------------------------------
+
+# control plane
+aws_control_plane_architecture: "arm64" # control plane
+aws_control_plane_instance_type: "m8g.2xlarge" # "m6a.2xlarge" # 8 vCPU, 32 GiB RAM
+aws_control_plane_instance_count: 3 # 3 nodes minimum, on 3 different availability zones
+
+# primary set of compute nodes
+aws_worker_architecture: "amd64" # initial compute nodes, 2nd set of compute nodes will be arm64
+aws_worker_instance_type: "m6a.xlarge" # 4 vCPU, 16 GiB RAM
+aws_worker_instance_count: 3 # 3 nodes minimum, on 3 different availability zones
+
+#------------------------------------------------------------------------------------------------
+# azure defaults  
+#------------------------------------------------------------------------------------------------
+
+# see https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/general-purpose/dv5-series
+# see https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/general-purpose/dpsv5-series
+
+# control plane
+azure_control_plane_architecture: "amd64" # control plane
+azure_control_plane_instance_type: "Standard_D8s_v5" # 8 vCPU, 32 GiB RAM
+azure_control_plane_instance_count: 3 # 3 nodes minimum, on 3 different availability zones
+azure_control_plane_volume_type: "Premium_LRS"
+
+# primary set of compute nodes
+azure_worker_architecture: "amd64" # initial compute nodes, 2nd set of compute nodes will be arm64
+azure_worker_instance_type: "Standard_D8s_v5" # 8 vCPU, 32 GiB RAM
+azure_worker_instance_count: 3 # 3 nodes minimum, on 3 different availability zones
+azure_worker_volume_type: "Premium_LRS"
+
+#------------------------------------------------------------------------------------------------
+# gcp defaults
+#------------------------------------------------------------------------------------------------
+
+# see https://cloud.google.com/compute/docs/general-purpose-machines
+
+gcp_control_plane_architecture: "arm64" # control plane
+gcp_control_plane_instance_count: 3 # 3 nodes minimum, on 3 different availability zones
+gcp_control_plane_instance_type: "t2a-standard-8" # 8 vCPU, 32 GiB RAM
+
+gcp_worker_architecture: "arm64" # initial compute nodes, 2nd set of compute nodes will be arm64
+gcp_worker_instance_count: 3 # 3 nodes minimum, on 3 different availability zones
+gcp_worker_instance_type: "t2a-standard-8" # 8 vCPU, 32 GiB RAM

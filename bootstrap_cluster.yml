@@ -1,0 +1,42 @@
+- name: bootstrap the openshift cluster
+  hosts: localhost
+  vars:
+    # set the following to control the install/uninstall process
+    become_override: false
+
+  tasks:
+    - name: gather cluster facts
+      include_role:
+        name: roles/gather-cluster-facts
+
+    - name: get the installer binary
+      include_role:
+        name: roles/installer-binary
+        
+    - name: bootstrap the openshift cluster
+      include_role:
+        name: roles/create-cluster
+
+    - name: gather cluster facts (again)
+      include_role:
+        name: roles/gather-cluster-facts
+
+    - name: configure certificates
+      include_role:
+        name: roles/setup-cert-manager
+
+    - name: configure cluster authentication
+      include_role:
+        name: roles/setup-auth
+
+    - name: configure gitops
+      include_role:
+        name: roles/setup-gitops
+
+    - name: prepare the platform
+      include_role:
+        name: roles/prepare-platform
+
+    - name: show web console url
+      debug:
+        msg: "Access the web-console: https://console-openshift-console.apps.{{ cluster_name }}.{{ cluster_sub_domain }}"

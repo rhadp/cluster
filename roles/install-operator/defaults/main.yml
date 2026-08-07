@@ -1,0 +1,15 @@
+---
+
+# installation defaults
+operator_namespace: "openshift-operators"
+wait_for_operator: true
+create_operator_namespace: true
+create_operator_group: false
+manage_all_namespaces: true
+
+# subscription defaults
+subscription_channel: "latest"
+subscription_starting_csv: ""
+install_plan_approval: "Automatic"
+source: "redhat-operators"
+source_namespace: "openshift-marketplace"

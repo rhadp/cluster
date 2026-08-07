@@ -1,0 +1,40 @@
+
+# install the operator
+- name: install cert-manager operator
+  include_role:
+    name: roles/install-operator
+  vars:
+    operator_name: "openshift-cert-manager-operator"
+    operator_group_name: "openshift-cert-manager-operator"
+    operator_subscription_name: "openshift-cert-manager-operator"
+    operator_namespace: "{{ cert_manager_operator_namespace }}"
+    operator_deployment_name: "{{ cert_manager_deployment_name }}"
+    subscription_channel: "{{ cert_manager_subscription_channel }}"
+    subscription_starting_csv: "{{ cert_manager_subscription_starting_csv }}"
+    install_plan_approval: "Automatic"
+    create_operator_namespace: true
+    create_operator_group: true
+    wait_for_operator: true
+
+- name: fix permissions
+  k8s:
+    state: present
+    apply: yes
+    definition: "{{ lookup('template', item ) | from_yaml }}"
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  loop:
+    - role_cert_manager.yml.j2
+    - rb_cert_manager.yml.j2
+
+- name: configure cert-manager and request certificates
+  include_tasks:
+    file: ./install.yml
+    apply:
+      become: "{{ become_override | bool }}"
+
+- name: configure ingress controller to use the certificate
+  include_tasks:
+    file: ./post_install.yml
+    apply:
+      become: "{{ become_override | bool }}"
+

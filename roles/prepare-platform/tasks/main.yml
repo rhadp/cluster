@@ -1,0 +1,55 @@
+# platform basics like namespaces, cluster roles, etc.
+
+- name: create rhas bootstrap app
+  k8s:
+    definition: "{{ lookup('template', item ) | from_yaml }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  loop:
+    - app-project.yml.j2
+    - app-platform.yml.j2
+
+- name: wait for the rhas bootstrap app to be ready
+  k8s_info:
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: rhas-platform
+    namespace: "{{ gitops_namespace }}"
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  register: r_application
+  retries: 180
+  delay: 10
+  until:
+    - r_application.resources | length > 0
+    - r_application.resources[0].status is defined
+    - r_application.resources[0].status.sync is defined
+    - r_application.resources[0].status.sync.status is defined
+    - r_application.resources[0].status.sync.status == 'Synced'
+
+
+# enable the developer perspective
+- name: configure dev console perspectives
+  shell: |
+    oc patch console.operator.openshift.io/cluster --type='merge' \
+    -p '{"spec":{"customization":{"perspectives":[
+      {"id":"dev","visibility":{"state":"Enabled"}},
+      {"id":"admin","visibility":{"state":"AccessReview","accessReview":{"required":[
+        {"group":"rbac.authorization.k8s.io","resource":"clusterroles","verb":"list"}
+      ]}}}
+    ]}}}' \
+    --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+- name: enable gitops plugin
+  shell: |
+    oc patch console.operator.openshift.io/cluster --type='merge' \
+    -p '{"spec":{"plugins":["gitops-plugin"]}}' \
+    --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+- name: remove self-provisioner
+  when: remove_self_provisioning | bool == true
+  ignore_errors: true
+  shell: |
+    oc adm policy remove-cluster-role-from-group \
+      self-provisioner system:authenticated:oauth \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"

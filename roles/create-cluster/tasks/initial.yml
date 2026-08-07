@@ -1,0 +1,42 @@
+
+- name: set cluster fqn
+  set_fact:
+    cluster_fqn: "{{ cluster_name }}-{{ cloud_provider }}"
+
+- name: create .env file
+  template:
+    src: "roles/create-cluster/templates/env-{{ cloud_provider }}.j2"
+    dest: "{{ openshift_install_dir }}/.env-{{ cluster_fqn }}.sh"
+    
+- name: create azure credentials file
+  when: cloud_provider == "azure"
+  template:
+    src: "roles/create-cluster/templates/azure_credentials.json.j2"
+    dest: "~/.azure/osServicePrincipal.json"
+
+- name: create dirs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  with_items:
+    - "$HOME/.kube"
+    - "$HOME/.ssh"
+    - "{{ cluster_metadata_dir }}/{{ cluster_fqn }}"
+
+# FIXME: check if the keys already exist, otherwise generate them
+- name: generate SSH keys for the cluster
+  openssh_keypair:
+    type: rsa
+    size: 2048
+    path: "{{ cluster_ssh_key_dir }}/{{ cluster_fqn }}"
+
+- name: import the cluster public key
+  slurp:
+    src: "{{ cluster_ssh_key_dir }}/{{ cluster_fqn }}.pub"
+  register: cluster_ssh_pub_key
+    
+- name: import pull secret
+  slurp:
+    src: "{{ pull_secret_file }}"
+  register: cluster_pull_secret

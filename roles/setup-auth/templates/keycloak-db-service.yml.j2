@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kc-postgresql-service
+  namespace: {{ keycloak_namespace }}
+spec:
+  selector:
+    app: kc-postgresql
+  type: LoadBalancer
+  ports:
+  - port: 5432
+    targetPort: 5432

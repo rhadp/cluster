@@ -1,0 +1,73 @@
+
+# create a custom 'platform developer' role
+
+# prepare the default admin user and groups
+
+- name: create the default groups
+  ignore_errors: true # can fail if group already exists
+  shell: |
+    oc adm groups new {{ item }} \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+  with_items:
+    - "{{ cluster_admin_group }}"
+    - "{{ platform_admin_group }}"
+    - "{{ platform_user_group }}"
+
+- name: add the cluster-admin ClusterRole to the admin group
+  shell: |
+    oc adm policy add-cluster-role-to-group cluster-admin {{ cluster_admin_group }} \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+- name: setup cluster admin
+  when: default_admin_user is defined
+  block:
+    - name: add the default admin user to the admin groups
+      shell: |
+        oc adm groups add-users {{ cluster_admin_group }} {{ default_admin_user }} \
+          --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+        oc adm groups add-users {{ platform_admin_group }} {{ default_admin_user }} \
+          --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+- name: add the admin groups to the default platform groups
+  shell: |
+    oc adm groups add-users {{ platform_admin_group }} {{ cluster_admin_group }} \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+    oc adm groups add-users {{ platform_user_group }} {{ platform_admin_group }} \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+# create the jumpstarter groups
+
+- name: create the jumpstarter groups
+  ignore_errors: true # can fail if group already exists
+  shell: |
+    oc adm groups new {{ item }} \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+  with_items:
+    - "{{ jumpstarter_admin_group }}"
+    - "{{ jumpstarter_user_group }}"
+
+- name: add the admin groups to the jumpstarter groups
+  shell: |
+    oc adm groups add-users {{ jumpstarter_admin_group }} {{ cluster_admin_group }} \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+    oc adm groups add-users {{ jumpstarter_admin_group }} {{ platform_admin_group }} \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+    oc adm groups add-users {{ jumpstarter_user_group }} {{ jumpstarter_admin_group }} \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+      
+# RBAC for the default groups
+# see https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/authentication_and_authorization/using-rbac
+
+# This is just a basic setup, more roles etc will be added later when the platform is setup
+- name: add default roles to the platform developer group
+  shell: |
+    oc adm policy add-cluster-role-to-group {{ item }} {{ platform_user_group }} \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+  with_items: 
+    - "basic-user"
+    - "cluster-status"
+    - "self-provisioner"

@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kc-postgresql
+  namespace: {{ keycloak_namespace }}
+spec:
+  serviceName: kc-postgresql-service
+  selector:
+    matchLabels:
+      app: kc-postgresql
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kc-postgresql
+    spec:
+      containers:
+        - name: kc-postgresql
+          image: postgres:15
+          volumeMounts:
+            - mountPath: /data
+              name: kc-data
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-db-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-db-secret
+                  key: password
+            - name: PGDATA
+              value: /data/pgdata
+            - name: POSTGRES_DB
+              value: keycloak
+      #volumes:
+      #  - name: kc-data
+      #    emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: kc-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: "{{ cluster_default_storage_class }}"
+        resources:
+          requests:
+            storage: 10Gi

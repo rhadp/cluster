@@ -1,0 +1,11 @@
+# cert-manager-tokenrequest-role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cert-manager-tokenrequest
+  namespace: cert-manager
+rules:
+- apiGroups: [""]
+  resources: ["serviceaccounts/token"]
+  verbs: ["create"]
+  resourceNames: ["cert-manager"]

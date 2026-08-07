@@ -1,0 +1,87 @@
+
+# install the keycloak operator
+
+- name: install keycloak operator
+  include_role:
+    name: roles/install-operator
+  vars:
+    operator_name: "rhbk-operator"
+    operator_subscription_name: "rhbk-operator"
+    subscription_channel: "{{ keycloak_subscription_channel }}"
+    subscription_starting_csv: "{{ keycloak_subscription_starting_csv }}"
+    operator_deployment_name: "rhbk-operator"
+    operator_namespace: "{{ keycloak_namespace}}"
+    operator_group_name: "keycloak"
+    create_operator_namespace: true
+    create_operator_group: true
+    manage_all_namespaces: false
+
+# prepare the keycloak instance
+
+- name: create keycloak instance
+  k8s:
+    definition: "{{ lookup('template', item ) | from_yaml }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  loop:
+    - keycloak-temp-admin-secret.yml.j2
+    - keycloak-db-secret.yml.j2
+    - keycloak-db-statefulset.yml.j2
+    - keycloak-db-service.yml.j2
+    - keycloak-instance.yml.j2
+    - keycloak-openid-client-secret.yml.j2
+    
+- name: wait for KC to be ready
+  k8s_info:
+    api_version: v1
+    kind: StatefulSet
+    namespace: "{{ keycloak_namespace }}"
+    name: "keycloak"
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  register: r_statefulset
+  retries: 60
+  delay: 10
+  until:
+    - r_statefulset.resources | length | int > 0
+    - r_statefulset.resources[0].status.availableReplicas is defined
+    - r_statefulset.resources[0].status.availableReplicas | int == r_statefulset.resources[0].spec.replicas | int
+
+- name: import the realm
+  k8s:
+    definition: "{{ lookup('template', item ) | from_yaml }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  loop:
+    - openshift-realm.yml.j2
+
+- name: pause to allow realm import to start
+  pause:
+    seconds: 60
+
+- name: wait for KC to be ready after realm import
+  k8s_info:
+    api_version: v1
+    kind: StatefulSet
+    namespace: "{{ keycloak_namespace }}"
+    name: "keycloak"
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  register: r_statefulset
+  retries: 60
+  delay: 10
+  until:
+    - r_statefulset.resources | length | int > 0
+    - r_statefulset.resources[0].status.availableReplicas is defined
+    - r_statefulset.resources[0].status.availableReplicas | int == r_statefulset.resources[0].spec.replicas | int
+
+# add a link to Keycloak to the admin perspective
+
+- name: add link to KC to the web admin
+  k8s:
+    definition: "{{ lookup('template', item ) | from_yaml }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  loop:
+    - keycloak-link.yml.j2

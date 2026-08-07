@@ -1,0 +1,18 @@
+---
+# defaults
+
+# default platform groups
+cluster_admin_group: "cluster-admins"
+platform_admin_group: "platform-admins"
+platform_user_group: "platform-users"
+
+# default jumpstarter groups
+jumpstarter_admin_group: "jumpstarter-admins"
+jumpstarter_user_group: "jumpstarter-users"
+
+# keycloak
+keycloak_namespace: "keycloak"
+
+# keycloak subscription
+keycloak_subscription_channel: "stable-v26.6"
+keycloak_subscription_starting_csv: "rhbk-operator.v26.6.4-opr.1" 

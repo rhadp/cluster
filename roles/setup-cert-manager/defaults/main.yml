@@ -1,0 +1,12 @@
+---
+# defaults
+
+cert_duration: "2160h" # 90 days
+cert_renew_before: "168h" # 1 week
+
+cert_manager_subscription_channel: "stable-v1"  
+cert_manager_subscription_starting_csv: "cert-manager-operator.v1.20.0"
+
+cert_manager_namespace: "cert-manager"
+cert_manager_operator_namespace: "cert-manager-operator"
+cert_manager_deployment_name: "cert-manager-operator-controller-manager"

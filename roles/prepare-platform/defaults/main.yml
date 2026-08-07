@@ -1,0 +1,10 @@
+---
+# defaults
+
+# default platform groups (also defined in setup-auth)
+cluster_admin_group: "cluster-admins"
+platform_admin_group: "platform-admins"
+platform_user_group: "platform-users"
+
+# keycloak
+keycloak_namespace: "keycloak"

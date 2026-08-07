@@ -1,0 +1,19 @@
+
+- name: prepare the cluster installation
+  include_tasks:
+    file: ./initial.yml
+    apply:
+      become: "{{ become_override | bool }}"
+
+- name: install the cluster
+  include_tasks:
+    file: ./install.yml
+    apply:
+      become: "{{ become_override | bool }}"
+
+- name: post cluster installation tasks
+  include_tasks:
+    file: ./post_install.yml
+    apply:
+      become: "{{ become_override | bool }}"
+

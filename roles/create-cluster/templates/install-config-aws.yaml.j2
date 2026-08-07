@@ -1,0 +1,44 @@
+additionalTrustBundlePolicy: Proxyonly
+apiVersion: v1
+baseDomain: {{ cluster_sub_domain }}
+metadata:
+  name: {{ cluster_name }}
+compute:
+{% if cluster_topology == "compact" %}
+- name: worker
+  platform: {}
+  replicas: 0
+{% else %}
+- name: worker
+  architecture: {{ aws_worker_architecture }}
+  hyperthreading: Enabled
+  platform:
+    aws:
+      type: {{ aws_worker_instance_type }}
+  replicas: {{ aws_worker_instance_count }}
+{% endif %}
+controlPlane:
+  name: master
+  architecture: {{ aws_control_plane_architecture }}
+  hyperthreading: Enabled
+  platform:
+    aws:
+      type: {{ aws_control_plane_instance_type }}
+  replicas: {{ aws_control_plane_instance_count }}
+networking:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  machineNetwork:
+  - cidr: 10.0.0.0/16
+  networkType: OVNKubernetes
+  serviceNetwork:
+  - 172.30.0.0/16
+platform:
+  aws:
+    region: {{ aws_default_region }}
+publish: External
+pullSecret: |
+  {{ cluster_pull_secret['content'] | b64decode }}
+sshKey: |
+  {{ cluster_ssh_pub_key['content'] | b64decode }}

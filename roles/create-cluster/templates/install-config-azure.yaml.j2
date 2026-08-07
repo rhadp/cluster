@@ -1,0 +1,51 @@
+additionalTrustBundlePolicy: Proxyonly
+apiVersion: v1
+baseDomain: {{ cluster_sub_domain }}
+metadata:
+  name: {{ cluster_name }}
+compute:
+{% if cluster_topology == "compact" %}
+- name: worker
+  platform: {}
+  replicas: 0
+{% else %}
+- name: worker
+  architecture: {{ azure_worker_architecture }}
+  hyperthreading: Enabled
+  platform:
+    azure:
+      type: {{ azure_worker_instance_type }}
+      osDisk:
+        diskType: {{ azure_worker_volume_type }}
+  replicas: {{ azure_worker_instance_count }}
+{% endif %}
+controlPlane:
+  architecture: {{ azure_control_plane_architecture }}
+  hyperthreading: Enabled
+  name: master
+  platform:
+    azure:
+      type: {{ azure_control_plane_instance_type }}
+      osDisk:
+        diskType: {{ azure_control_plane_volume_type }}
+  replicas: {{ azure_control_plane_instance_count }}
+networking:
+  clusterNetwork:
+  - cidr: 10.128.0.0/14
+    hostPrefix: 23
+  machineNetwork:
+  - cidr: 10.0.0.0/16
+  networkType: OVNKubernetes
+  serviceNetwork:
+  - 172.30.0.0/16
+platform:
+  azure:
+    baseDomainResourceGroupName: {{ azure_resource_group }}
+    cloudName: AzurePublicCloud
+    outboundType: Loadbalancer
+    region: {{ azure_default_region }}
+publish: External
+pullSecret: |
+  {{ cluster_pull_secret['content'] | b64decode }}
+sshKey: |
+  {{ cluster_ssh_pub_key['content'] | b64decode }}

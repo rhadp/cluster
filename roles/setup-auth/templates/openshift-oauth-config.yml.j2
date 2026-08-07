@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: "AutomotiveSuite"
+    mappingMethod: claim
+    type: OpenID
+    openID:
+      clientID: openshift
+      clientSecret:
+        name: openshift-openid-client-secret
+      claims:
+        email:
+          - email
+        groups:
+          - groups
+        name:
+          - name
+        preferredUsername:
+          - preferred_username
+      extraScopes: []
+      issuer: https://keycloak-{{ keycloak_namespace }}.apps.{{ cluster_name }}.{{ cluster_sub_domain }}/realms/openshift
+  
+  - name: OpenShift
+    mappingMethod: claim
+    type: HTPasswd
+    htpasswd:
+      fileData:
+        name: htpasswd-secret

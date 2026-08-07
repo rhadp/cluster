@@ -1,0 +1,8 @@
+---
+# defaults
+
+# pipelines operator
+pipelines_subscription_channel: "latest"
+pipelines_subscription_starting_csv: "openshift-pipelines-operator-rh.v1.22.4"
+
+

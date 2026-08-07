@@ -1,0 +1,117 @@
+
+- name: installing operator
+  debug:
+    msg: "installing '{{ operator_name }}'"
+
+- name: create operator namespace
+  k8s:
+    kind: Namespace
+    name: "{{ operator_namespace }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  when: create_operator_namespace
+
+- name: create operator group
+  when: create_operator_group
+  block:
+    - name: create operator group all namespaces
+      when: manage_all_namespaces == true
+      k8s:
+        definition:
+          apiVersion: operators.coreos.com/v1
+          kind: OperatorGroup
+          metadata:
+            name: "{{ operator_group_name }}"
+            namespace: "{{ operator_namespace }}"
+          spec:
+            upgradeStrategy: "Default"
+            targetNamespaces: []
+        state: present
+        apply: yes
+        kubeconfig: "{{ local_kubeconfig_file }}"
+
+    - name: create operator group single namespace
+      when: manage_all_namespaces == false
+      k8s:
+        definition:
+          apiVersion: operators.coreos.com/v1
+          kind: OperatorGroup
+          metadata:
+            name: "{{ operator_group_name }}"
+            namespace: "{{ operator_namespace }}"
+          spec:
+            upgradeStrategy: "Default"
+            targetNamespaces: ["{{ operator_namespace }}"]
+        state: present
+        apply: yes
+        kubeconfig: "{{ local_kubeconfig_file }}"
+
+- name: install operators
+  k8s:
+    definition: "{{ lookup('template', item ) | from_yaml }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  loop:
+    - operator-template.yml.j2
+
+- name: set default deployment name
+  when: operator_deployment_name is defined
+  set_fact:
+    _operator_deployment_name: "{{ operator_deployment_name }}"
+
+- name: get deployment name
+  when: operator_deployment_name is undefined
+  block:
+    - name: get subscription info
+      k8s_info:
+        api_version: operators.coreos.com/v1alpha1
+        kind: Subscription
+        namespace: "{{ operator_namespace }}"
+        name: "{{ operator_subscription_name }}"
+        kubeconfig: "{{ local_kubeconfig_file }}"
+      register: r_subscription
+      retries: 30
+      delay: 10
+      until:
+        - r_subscription.resources | length | int > 0
+        - r_subscription.resources[0].status.currentCSV is defined
+
+    - name: get CSV info
+      k8s_info:
+        api_version: operators.coreos.com/v1alpha1
+        kind: ClusterServiceVersion
+        namespace: "{{ operator_namespace }}"
+        name: "{{ r_subscription.resources[0].status.currentCSV }}"
+        kubeconfig: "{{ local_kubeconfig_file }}"
+      register: r_csv
+      retries: 30
+      delay: 10
+      until:
+        - r_csv.resources | length | int > 0
+        - r_csv.resources[0].spec.install.spec.deployments[0].name is defined
+    
+    - name: set deployment name
+      set_fact:
+        _operator_deployment_name: "{{ r_csv.resources[0].spec.install.spec.deployments[0].name }}"
+
+- name: wait for operator to be ready
+  k8s_info:
+    api_version: v1
+    kind: Deployment
+    namespace: "{{ operator_namespace }}"
+    name: "{{ _operator_deployment_name }}"
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  register: r_deployment
+  retries: 60
+  delay: 10
+  until:
+    - r_deployment.resources | length | int > 0
+    - r_deployment.resources[0].status.availableReplicas is defined
+    - r_deployment.resources[0].status.availableReplicas | int == r_deployment.resources[0].spec.replicas | int
+  when: wait_for_operator
+
+- name: installed operator
+  debug:
+    msg: "done installing '{{ operator_name }}'"  

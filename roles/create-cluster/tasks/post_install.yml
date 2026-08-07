@@ -1,0 +1,99 @@
+# Implement your post-install deployment tasks here
+# -------------------------------------------------
+
+# add RHAS labels to the default nodes
+
+- name: find default worker nodes
+  k8s_info:
+    api_version: v1
+    kind: Node
+    label_selectors:
+      - node-role.kubernetes.io/worker
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  register: found_worker_nodes
+
+- name: label worker nodes (infra)
+  shell: |
+    oc label node {{ item }} {{ platform_prefix }}.node-role/infra='true' \
+    --overwrite=true \
+    --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+  with_items:
+    - "{{ found_worker_nodes.resources | map(attribute='metadata.name') | list
+      }}"
+
+- name: find ARM worker nodes
+  k8s_info:
+    api_version: v1
+    kind: Node
+    label_selectors:
+      - node-role.kubernetes.io/worker
+      - kubernetes.io/arch=arm64
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  register: found_arm_worker_nodes
+
+- name: label ARM worker nodes (builder)
+  shell: |
+    oc label node {{ item }} {{ platform_prefix }}.node-role/builder='true' \
+    --overwrite=true \
+    --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+    
+    oc label node {{ item }} aib='true' \
+    --overwrite=true \
+    --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+  with_items:
+    - "{{ found_arm_worker_nodes.resources | map(attribute='metadata.name') |
+      list }}"
+
+# NOTE: this entire setup only makes sense if the control plane nodes are ARM ...
+
+- name: label control plane nodes
+  when: cluster_topology == 'compact'
+  block:
+    - name: find control plane nodes
+      k8s_info:
+        api_version: v1
+        kind: Node
+        label_selectors:
+          - node-role.kubernetes.io/master
+          - kubernetes.io/arch=arm64
+        kubeconfig: "{{ local_kubeconfig_file }}"
+      register: found_control_plane_nodes
+
+    - name: label control plane nodes (infra)
+      shell: |
+        oc label node {{ item }} {{ platform_prefix }}.node-role/infra='true' \
+        --overwrite=true \
+        --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+      with_items:
+        - "{{ found_control_plane_nodes.resources |
+          map(attribute='metadata.name') | list }}"
+
+    - name: label control plane nodes (builder)
+      when: cluster_topology == 'compact'
+      shell: |
+        oc label node {{ item }} {{ platform_prefix }}.node-role/builder='true' \
+        --overwrite=true \
+        --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+        oc label node {{ item }} aib='true' \
+        --overwrite=true \
+        --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+      with_items:
+        - "{{ found_control_plane_nodes.resources |
+          map(attribute='metadata.name') | list }}"
+
+# remove cluster specific assets from the local machine
+- name: remove cluster specific assets
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ openshift_install_dir }}/.env-{{ cluster_fqn }}.sh"
+
+- name: remove the installer binary
+  when: remove_installer_binary | bool == true
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ openshift_install_dir }}/{{ installer_binary_fqn }}"

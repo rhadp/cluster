@@ -1,0 +1,245 @@
+
+- name: create cloud provider credentials (aws)
+  when: cloud_provider == "aws"
+  k8s:
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: route53-credentials
+        namespace: "{{ item }}"
+      type: Opaque
+      data:
+        access-key-id: "{{ aws_access_key_id | b64encode }}"
+        secret-access-key: "{{ aws_secret_access_key | b64encode }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  with_items: # FIXME: check which namespaces are really needed
+    - "{{ cert_manager_namespace }}"
+    - "{{ cert_manager_operator_namespace }}"
+    - "openshift-ingress"
+    - "openshift-ingress-operator"
+
+- name: create cloud provider credentials (azure)
+  when: cloud_provider == "azure"
+  k8s:
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: azure-dns-credentials
+        namespace: "{{ item }}"
+      type: Opaque
+      data:
+        client-id: "{{ azure_client_id | b64encode }}"
+        client-secret: "{{ azure_password | b64encode }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  with_items: # FIXME: check which namespaces are really needed
+    - "{{ cert_manager_namespace }}"
+    - "{{ cert_manager_operator_namespace }}"
+    - "openshift-ingress"
+    - "openshift-ingress-operator"
+
+- name: create cloud provider credentials (gcp)
+  when: cloud_provider == "gcp"
+  block:
+    - name: import the service account key
+      slurp:
+        src: "{{ gcp_service_account_key_file }}"
+      register: gcp_service_account_json
+    
+    - name: create service account secret
+      k8s:
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: gcp-service-account
+            namespace: "{{ item }}"
+          type: Opaque
+          data:
+            service-account-json: '{{ gcp_service_account_json.content }}'
+        state: present
+        apply: yes
+        kubeconfig: "{{ local_kubeconfig_file }}"
+      with_items: # FIXME: check which namespaces are really needed
+        - "{{ cert_manager_namespace }}"
+        - "{{ cert_manager_operator_namespace }}"
+        - "openshift-ingress"
+        - "openshift-ingress-operator"
+
+- name: create cert-manager instance
+  k8s:
+    definition:
+      apiVersion: operator.openshift.io/v1alpha1
+      kind: CertManager
+      metadata:
+        name: cluster
+      spec:
+        managementState: "Managed"
+        logLevel: Normal
+        operatorLogLevel: Normal
+        unsupportedConfigOverrides:
+          controller:
+            args:
+              - "--dns01-recursive-nameservers=1.1.1.1:53"
+              - "--dns01-recursive-nameservers-only"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+
+- name: pause to allow cert-manager to start
+  pause:
+    seconds: 180
+
+- name: create cluster issuer (aws)
+  when: cloud_provider == "aws"
+  k8s:
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      metadata:
+        name: letsencrypt-prod
+      spec:
+        acme:
+          server: https://acme-v02.api.letsencrypt.org/directory
+          email: "{{ letsencrypt_email }}"
+          privateKeySecretRef:
+            name: letsencrypt-prod
+          solvers:
+            - dns01:
+                route53:
+                  region: "{{ aws_default_region }}"
+                  hostedZoneID: "{{ cluster_public_zone_id }}"
+                  accessKeyID: "{{ aws_access_key_id }}"
+                  secretAccessKeySecretRef:
+                    name: route53-credentials
+                    key: secret-access-key
+              selector:
+                dnsZones:
+                  - "apps.{{ cluster_base_domain }}"
+                  - "api.{{ cluster_base_domain }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+
+- name: create cluster issuer (azure)
+  when: cloud_provider == "azure"
+  k8s:
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      metadata:
+        name: letsencrypt-prod
+      spec:
+        acme:
+          server: https://acme-v02.api.letsencrypt.org/directory
+          email: "{{ letsencrypt_email }}"
+          privateKeySecretRef:
+            name: letsencrypt-prod
+          solvers:
+            - dns01:
+                azureDNS:
+                  resourceGroupName: "{{ azure_resource_group }}"
+                  hostedZoneName: "{{ cluster_public_zone_id }}"
+                  subscriptionID: "{{ azure_subscription }}"
+                  tenantID: "{{ azure_tenant }}"
+                  clientID: "{{ azure_client_id }}"
+                  clientSecretSecretRef:
+                    name: azure-dns-credentials
+                    key: client-secret
+              selector:
+                dnsZones:
+                  - "apps.{{ cluster_base_domain }}"
+                  - "api.{{ cluster_base_domain }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+
+- name: create cluster issuer (gcp)
+  when: cloud_provider == "gcp"
+  k8s:
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      metadata:
+        name: letsencrypt-prod
+      spec:
+        acme:
+          preferredChain: ""
+          server: https://acme-v02.api.letsencrypt.org/directory
+          email: "{{ letsencrypt_email }}"
+          privateKeySecretRef:
+            name: letsencrypt-prod
+          solvers:
+            - dns01:
+                cloudDNS:
+                  project: "{{ gcp_project_id }}"
+                  serviceAccountSecretRef:
+                    name: gcp-service-account
+                    key: service-account-json
+              #selector:
+              #  dnsZones:
+              #    - "apps.{{ cluster_base_domain }}"
+              #    - "api.{{ cluster_base_domain }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+
+- name: wait for cluster issuer to be ready
+  pause:
+    seconds: 180
+
+- name: create wildcard certificate for default ingress
+  k8s:
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: default-ingress-cert
+        namespace: openshift-ingress
+        annotations:
+          cert-manager.io/revision-history-limit: "3"
+      spec:
+        secretName: default-ingress-cert
+        secretTemplate:
+          annotations:
+            cert-manager.io/allow-direct-injection: "true"
+          labels:
+            cert-manager.io/certificate-name: default-ingress-cert
+        issuerRef:
+          name: letsencrypt-prod
+          kind: ClusterIssuer
+          group: cert-manager.io
+        usages:
+          - "server auth"
+          - "client auth"
+        dnsNames:
+          - "*.apps.{{ cluster_base_domain }}"
+          - "apps.{{ cluster_base_domain }}"
+        duration: "{{ cert_duration }}"
+        renewBefore: "{{ cert_renew_before }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+
+- name: wait for certificate to be ready
+  k8s_info:
+    api_version: cert-manager.io/v1
+    kind: Certificate
+    name: default-ingress-cert
+    namespace: openshift-ingress
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  register: r_certificate
+  retries: 60
+  delay: 10
+  until:
+    - r_certificate.resources | length | int > 0
+
+- name: pause to allow certificate to be ready
+  pause:
+    seconds: 120
+
