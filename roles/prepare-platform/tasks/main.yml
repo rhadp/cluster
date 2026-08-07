@@ -22,7 +22,7 @@
     subscription_channel: "{{ pipelines_subscription_channel }}"
     subscription_starting_csv: "{{ pipelines_subscription_starting_csv }}"
     operator_deployment_name: "openshift-pipelines-operator"
-    
+
 - name: pause to allow gitops operator to get ready
   pause:
     seconds: 180
@@ -37,30 +37,12 @@
   loop:
     - app-project.yml.j2
     - app-platform.yml.j2
-    - app-devspaces.yml.j2
     
 - name: wait for the rhas bootstrap app to be ready
   k8s_info:
     api_version: argoproj.io/v1alpha1
     kind: Application
     name: rhas-platform
-    namespace: "{{ gitops_namespace }}"
-    kubeconfig: "{{ local_kubeconfig_file }}"
-  register: r_application
-  retries: 180
-  delay: 10
-  until:
-    - r_application.resources | length > 0
-    - r_application.resources[0].status is defined
-    - r_application.resources[0].status.sync is defined
-    - r_application.resources[0].status.sync.status is defined
-    - r_application.resources[0].status.sync.status == 'Synced'
-
-- name: wait for the devspaces app to be ready
-  k8s_info:
-    api_version: argoproj.io/v1alpha1
-    kind: Application
-    name: "{{ devspaces_app_name }}"
     namespace: "{{ gitops_namespace }}"
     kubeconfig: "{{ local_kubeconfig_file }}"
   register: r_application
