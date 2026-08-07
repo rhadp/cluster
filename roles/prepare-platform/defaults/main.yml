@@ -1,6 +1,10 @@
 ---
 # defaults
 
+# gitops operator
+gitops_subscription_channel: "latest"
+gitops_subscription_starting_csv: "openshift-gitops-operator.v1.21.1"
+
 # default platform groups (also defined in setup-auth)
 cluster_admin_group: "cluster-admins"
 platform_admin_group: "platform-admins"

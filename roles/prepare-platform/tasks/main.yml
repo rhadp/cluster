@@ -1,5 +1,23 @@
-# platform basics like namespaces, cluster roles, etc.
+# install the gitops operator
+- name: install gitops operator
+  include_role:
+    name: roles/install-operator
+  vars:
+    operator_name: "openshift-gitops-operator"
+    operator_subscription_name: "openshift-gitops-operator"
+    subscription_channel: "{{ gitops_subscription_channel }}"
+    subscription_starting_csv: "{{ gitops_subscription_starting_csv }}"
+    operator_deployment_name: "openshift-gitops-operator-controller-manager"
+    operator_namespace: "openshift-gitops-operator"
+    operator_group_name: "openshift-gitops-operator"
+    create_operator_namespace: true
+    create_operator_group: true
 
+- name: pause to allow gitops operator to get ready
+  pause:
+    seconds: 180
+
+# platform basics like namespaces, cluster roles, etc.
 - name: create rhas bootstrap app
   k8s:
     definition: "{{ lookup('template', item ) | from_yaml }}"
@@ -40,10 +58,10 @@
     ]}}}' \
     --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
 
-- name: enable gitops plugin
+- name: enable pipelines, gitops plugins
   shell: |
     oc patch console.operator.openshift.io/cluster --type='merge' \
-    -p '{"spec":{"plugins":["gitops-plugin"]}}' \
+    -p '{"spec":{"plugins":["gitops-plugin","pipelines-console-plugin"]}}' \
     --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
 
 - name: remove self-provisioner
