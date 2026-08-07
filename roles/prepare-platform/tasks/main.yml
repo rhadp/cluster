@@ -13,6 +13,16 @@
     create_operator_namespace: true
     create_operator_group: true
 
+- name: install pipelines operator
+  include_role:
+    name: roles/install-operator
+  vars:
+    operator_name: "openshift-pipelines-operator-rh"
+    operator_subscription_name: "openshift-pipelines-operator"
+    subscription_channel: "{{ pipelines_subscription_channel }}"
+    subscription_starting_csv: "{{ pipelines_subscription_starting_csv }}"
+    operator_deployment_name: "openshift-pipelines-operator"
+    
 - name: pause to allow gitops operator to get ready
   pause:
     seconds: 180
