@@ -16,6 +16,30 @@ rules:
     resources:
       - roles
       - rolebindings
+      - clusterrolebindings
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: platform-admin-role
+  labels:
+    app.kubernetes.io/part-of: rhas-platform
+rules:
+  - apiGroups: [""]
+    resources:
+      - serviceaccounts
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources:
+      - roles
+      - rolebindings
       - clusterroles
       - clusterrolebindings
     verbs:
