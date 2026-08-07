@@ -4,6 +4,8 @@ metadata:
   name: pr-pac-role
   labels:
     app.kubernetes.io/part-of: rhas-platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 rules:
   - apiGroups: [""]
     resources:

@@ -4,6 +4,8 @@ metadata:
   name: platform-access-role
   labels:
     app.kubernetes.io/part-of: rhas-platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 rules:
   - apiGroups: [""]
     resources:
@@ -28,6 +30,8 @@ metadata:
   name: pipelines-access-role
   labels:
     app.kubernetes.io/part-of: rhas-platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 rules:
   - apiGroups: ["tekton.dev"]
     resources:
