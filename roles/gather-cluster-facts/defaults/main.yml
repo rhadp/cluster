@@ -1,0 +1,4 @@
+---
+# Default values for the role. To override, add them to the inventory files (main.yml, platform.yml).
+
+cluster_ssh_key_dir: "~/.ssh" # "$HOME/.ssh"

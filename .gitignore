@@ -9,6 +9,9 @@ hack.md
 cheatsheet.md
 hacking.md
 
+# agent foo
+.cursor/**
+
 # temporary local files
 tmp/
 venv/
@@ -23,3 +26,6 @@ venv/
 .pytest_cache/v/cache/nodeids
 .pytest_cache/v/cache/stepcache
 .pytest_cache/v/cache/stepcache
+
+# binaries
+bin/openshift-install-*

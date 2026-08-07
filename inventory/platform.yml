@@ -1,0 +1,34 @@
+all:
+  # default values that control the OpenShift cluster deployment
+  vars:
+    
+    # default repo for all the GitOps apps
+    platform_gitops_repo_url: "https://github.com/rhadp/rhas-deploy"
+    platform_gitops_repo_revision: "main"
+
+    #
+    # platform configuration
+    #
+
+    platform_deploy_devspaces: "{{ lookup('env', 'PLATFORM_DEPLOY_DEVSPACES') | default('true', true) }}" # deploy dev spaces
+    platform_deploy_jumpstarter: "{{ lookup('env', 'PLATFORM_DEPLOY_JUMPSTARTER') | default('true', true) }}" # deploy the jumpstarter operator
+    platform_deploy_builder: "{{ lookup('env', 'PLATFORM_DEPLOY_BUILDER') | default('true', true) }}" # deploy the builder operator
+
+    # 
+    # platform overrides
+    #
+    platform_devspaces_namespace: "{{ platform_prefix }}-devspaces"
+    # FIXME: platform_builder_namespace: "{{ platform_prefix }}-builder"
+    platform_builder_namespace: "automotive-dev-operator-system"
+    platform_jumpstarter_namespace: "{{ platform_prefix }}-jumpstarter"
+
+    # gitops namespace
+    gitops_namespace: "openshift-gitops"
+
+    #
+    # misc configuration
+    #
+
+    # remove the kubeadmin user and the self-provisioning role
+    remove_kubeadmin: true
+    remove_self_provisioning: true

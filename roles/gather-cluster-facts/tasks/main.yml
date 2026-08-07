@@ -1,0 +1,47 @@
+# basic cluster facts
+- name: set cluster fqn
+  set_fact:
+    cluster_fqn: "{{ cluster_name }}-{{ cloud_provider }}"
+
+- name: set local file paths
+  set_fact:
+    ssh_public_key_path: "{{ cluster_ssh_key_dir }}/{{ cluster_fqn }}.pub"
+    local_kubeconfig_file: "~/.kube/{{ cluster_fqn }}"
+    
+# extract some cluster information from the cluster API
+
+- name: get DNS information
+  ignore_errors: true # can fail if there is not cluster yet
+  k8s_info:
+    api_version: config.openshift.io/v1
+    kind: dns
+    name: cluster
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  register: r_cluster_dns
+
+- name: set cluster facts (all clouds)
+  when: r_cluster_dns.failed == false
+  block:
+    - name: set base domain (all clouds)
+      set_fact:
+        cluster_base_domain: "{{ r_cluster_dns.resources.0.spec.baseDomain }}"
+    
+    - name: set cluster facts (aws)
+      when: cloud_provider == "aws"
+      set_fact:
+        cluster_public_zone_id: "{{ r_cluster_dns.resources.0.spec.publicZone.id }}" # Route53 hosted zone ID
+        cluster_label: "{{ r_cluster_dns.resources.0.spec.privateZone.tags.Name.split('-')[:-1] | join('-') }}"
+
+    - name: set cluster facts (azure)
+      when: cloud_provider == "azure"
+      set_fact:
+        cluster_public_zone_id: "{{ r_cluster_dns.resources.0.spec.publicZone.id.split('/')[-1] }}" # Azure DNS zone ID
+        cluster_label: "{{ r_cluster_dns.resources.0.spec.privateZone.id.split('/')[4].split('-')[:-1] | join('-') }}"
+        _cluster_label: "{{ r_cluster_dns.resources.0.spec.privateZone.id.split('/')[4].split('-')[:-1] | join('_') }}"
+
+    - name: set cluster facts (gcp)
+      when: cloud_provider == "gcp"
+      set_fact:
+        cluster_public_zone_id: "{{ r_cluster_dns.resources.0.spec.publicZone.id }}" # Google Cloud DNS zone ID
+        cluster_label: "{{ r_cluster_dns.resources.0.spec.privateZone.id.split('-')[:2] | join('-') }}"
+

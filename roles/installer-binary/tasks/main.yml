@@ -1,0 +1,38 @@
+
+- name: set installer name
+  set_fact:
+    installer_binary_fqn: "openshift-install-{{ cluster_arch }}_{{ control_plane_arch }}-{{ cluster_version }}"
+    
+- name: check if the installer binary exists
+  stat:
+    path: "{{ openshift_install_dir }}/{{ installer_binary_fqn }}"
+  register: installer_binary_stat
+
+- name: download the installer binary
+  when: installer_binary_stat.stat.exists == false
+  block:
+    - name: set download url
+      set_fact:
+        installer_binary_url: "{{ openshift_clients_url }}/{{ cluster_arch }}/clients/ocp/{{ cluster_version }}/openshift-install-{{ installer_architecture }}.tar.gz"
+
+    - name: set download url
+      when: cluster_arch == "multi"
+      set_fact:
+        installer_binary_url: "{{ openshift_clients_url }}/{{ cluster_arch }}/clients/ocp/{{ cluster_version }}/{{ control_plane_arch }}/openshift-install-{{ installer_architecture }}.tar.gz"
+
+    - name: print download url
+      debug:
+        msg: "downloading installer binary from {{ installer_binary_url }}"
+
+    - name: download the installer binary
+      shell: |
+        cd {{ openshift_install_dir }}
+
+        curl -o {{ installer_binary }}-{{ installer_architecture }}.tar.gz \
+          -L {{ installer_binary_url }}
+
+        tar xzf ./{{ installer_binary }}-{{ installer_architecture }}.tar.gz
+
+        mv {{ installer_binary }} {{ installer_binary_fqn }}
+
+        rm {{ installer_binary }}-{{ installer_architecture }}.tar.gz

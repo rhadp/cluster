@@ -1,0 +1,19 @@
+all:
+  # default values that control the cluster architecture on AWS
+  # compact: arm-only, compact topology, 3x arm64 control plane / worker nodes, additional arm64 worker nodes are possible (virt/baremetal)
+  vars:
+    # cloud provider selection
+    cloud_provider: "aws" # aws, azure, gcp
+
+    # cluster version
+    cluster_version: "{{ lookup('env', 'CLUSTER_VERSION') }}"
+
+    # cluster topology
+    cluster_arch: "arm64" # x86_64, aarch64, multi -> multi is only available on aws & azure !
+    control_plane_arch: "arm64" #  amd64, arm64, -> only relevant when cluster_arch == multi
+    cluster_topology: "compact" # default, compact
+
+    cluster_default_storage_class: "gp3-csi" # "gp3-csi" (aws), "managed-csi" (azure), "standard-csi" (gcp)
+    
+    # installer architecture, see https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.22.5/
+    installer_architecture: "{{ lookup('env', 'INSTALLER_ARCHITECTURE') | default('mac-arm64', true) }}" # mac, mac-arm64, linux, linux-arm64

@@ -1,0 +1,43 @@
+# destroy the openshift cluster
+
+- name: set cluster fqn
+  set_fact:
+    cluster_fqn: "{{ cluster_name }}-{{ cloud_provider }}"
+
+- name: create .env file
+  template:
+    src: "roles/destroy-cluster/templates/env-{{ cloud_provider }}.j2"
+    dest: "{{ openshift_install_dir }}/.env-{{ cluster_fqn }}.sh"
+    
+- name: create azure credentials file
+  when: cloud_provider == "azure"
+  template:
+    src: "roles/destroy-cluster/templates/azure_credentials.json.j2"
+    dest: "~/.azure/osServicePrincipal.json"
+
+- name: destroy the openshift cluster
+  ignore_errors: true
+  shell: |
+    source .env-{{ cluster_fqn }}.sh && \
+    ./{{ installer_binary_fqn }} destroy cluster --dir="{{ cluster_metadata_dir }}/{{ cluster_fqn }}"
+  args:
+    chdir: "{{ openshift_install_dir }}"
+
+- name: remove cluster specific assets
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "~/.kube/{{ cluster_fqn }}"
+    - "{{ cluster_metadata_dir }}/{{ cluster_fqn }}"
+    - "{{ cluster_ssh_key_dir }}/{{ cluster_fqn }}"
+    - "{{ cluster_ssh_key_dir }}/{{ cluster_fqn }}.pub"
+    - "{{ openshift_install_dir }}/.env-{{ cluster_fqn }}.sh"
+
+- name: remove the installer binary
+  when: remove_installer_binary | bool == true
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ openshift_install_dir }}/{{ installer_binary_fqn }}"

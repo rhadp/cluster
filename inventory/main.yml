@@ -1,0 +1,76 @@
+all:
+  # default values that control the OpenShift cluster deployment
+  vars:
+    #
+    # cluster configuration
+    #
+
+    # cluster name, becomes part of the cluster FQDN
+    cluster_name: "{{ lookup('env', 'RHAS_CLUSTER_NAME') | default('rhas', true) }}"
+    # used in e.g. namespace creation, node labeling etc
+    platform_prefix: "{{ lookup('env', 'RHAS_PLATFORM_PREFIX') | default('auto', true) }}"
+
+    # cluster sub-domain, becomes part of the cluster FQDN
+    cluster_sub_domain: "{{ lookup('env', 'CLUSTER_BASE_DOMAIN') }}"
+
+    # create a second set of ARM worker nodes if primary is x86_64 based
+    setup_arm_worker_nodes: "{{ lookup('env', 'CLUSTER_ARM_NODES') | default('false', true) }}"
+     # create a bare-metal ARM worker node (currently AWS only)
+    setup_baremetal_worker_node: "{{ lookup('env', 'CLUSTER_BAREMETAL_NODES') | default('false', true) }}"
+    # setup cnv operator on bare-metal ARM worker node (currently AWS only)
+    setup_virtualization: "{{ lookup('env', 'CLUSTER_VIRT') | default('false', true) }}"
+    
+    #
+    # credentials used to deploy the cluster
+    #
+    
+    # pull secret, see https://console.redhat.com/openshift/create
+    pull_secret_file: "{{ lookup('env', 'PULL_SECRET_FILE') | default('inventory/secrets/pull-secret.txt', true) }}"
+
+    # aws infrastructure credentials
+    aws_access_key_id: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+    aws_secret_access_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+    aws_default_region: "{{ lookup('env', 'AWS_REGION') }}"
+
+    # gcp infrastructure credentials
+    gcp_service_account_key_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_KEY_FILE') }}" 
+    gcp_service_account_email: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_EMAIL') }}"
+    gcp_project_id: "{{ lookup('env', 'GCP_PROJECT_ID') }}"
+    gcp_organization_id: "{{ lookup('env', 'GCP_ORGANIZATION_ID') }}"
+    gcp_default_region: "{{ lookup('env', 'GCP_DEFAULT_REGION') }}"
+
+    # authentication configuration
+    keycloak_db_user: "{{ lookup('env', 'KEYCLOAK_DB_USER') | default('admin', true) }}"
+    keycloak_db_password: "{{ lookup('env', 'KEYCLOAK_DB_PASSWORD') | default('openshift', true) }}"
+    keycloak_client_secret: "{{ lookup('env', 'KEYCLOAK_CLIENT_SECRET') | default('openshiftkc', true) }}"
+
+    # letsencrypt account email
+    letsencrypt_email: "{{ lookup('env', 'LETSENCRYPT_EMAIL') | default('email@example.com', true) }}"
+
+    # default admin user
+    default_admin_user: "{{ lookup('env', 'DEFAULT_ADMIN_USER') | default('admin', true) }}"
+    default_admin_password: "{{ lookup('env', 'DEFAULT_ADMIN_PASSWORD') | default('openshift', true) }}"
+    default_admin_email: "{{ lookup('env', 'DEFAULT_ADMIN_EMAIL') | default('admin@example.com', true) }}"
+
+    # default anonymous users
+    default_nobody_user: "{{ lookup('env', 'DEFAULT_NOBODY_USER') | default('nobody', true) }}"
+    default_nobody_password: "{{ lookup('env', 'DEFAULT_NOBODY_PASSWORD') | default('noone', true) }}"
+
+    #
+    # misc configuration needed during the cluster deployment
+    #
+
+    # default name of the openshift-install binary
+    installer_binary: "openshift-install"
+
+    # remove the openshift-install binary after deployment
+    remove_installer_binary: false
+
+    # directory where the openshift-install binary will be stored
+    openshift_install_dir: "bin"
+
+    # key used for the cluster nodes
+    cluster_ssh_key_dir: "$HOME/.ssh"
+
+    # local directory where the cluster metadata will be stored
+    cluster_metadata_dir: "$HOME/.openshift"
