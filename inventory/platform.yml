@@ -3,7 +3,7 @@ all:
   vars:
     
     # default repo for all the GitOps apps
-    platform_gitops_repo_url: "https://github.com/rhadp/rhas-deploy"
+    platform_gitops_repo_url: "https://github.com/rhadp/cluster"
     platform_gitops_repo_revision: "main"
 
     #
