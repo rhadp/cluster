@@ -1,0 +1,60 @@
+name: deploy openshift cluster
+on:
+  workflow_dispatch:
+
+env:
+  CLOUD_PROVIDER: ${{ vars.CLOUD_PROVIDER || 'aws' }}
+  CLUSTER_TOPOLOGY: ${{ vars.CLUSTER_TOPOLOGY || 'default' }}
+
+  CLUSTER_VERSION: ${{ vars.CLUSTER_VERSION || '4.21.9' }}
+  
+  CLUSTER_ARM_NODES: ${{ vars.CLUSTER_ARM_NODES || 'false' }}
+  CLUSTER_BAREMETAL_NODES: ${{ vars.CLUSTER_BAREMETAL_NODES || 'false' }}
+  CLUSTER_VIRT: ${{ vars.CLUSTER_VIRT || 'false' }}
+
+  RHAS_CLUSTER_NAME: ${{ vars.RHAS_CLUSTER_NAME || 'rhas' }}
+  RHAS_PLATFORM_PREFIX: ${{ vars.RHAS_PLATFORM_PREFIX || 'auto' }}
+
+  CLUSTER_BASE_DOMAIN: ${{ vars.CLUSTER_BASE_DOMAIN || 'rhas.example.com' }}
+
+  CLUSTER_PULL_SECRET: ${{ secrets.CLUSTER_PULL_SECRET }}
+
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+  GCP_SERVICE_ACCOUNT_KEY_FILE: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY_FILE }}
+  GCP_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_ORGANIZATION_ID: ${{ secrets.GCP_ORGANIZATION_ID }}
+  GCP_DEFAULT_REGION: ${{ secrets.GCP_DEFAULT_REGION }}
+
+  #RH_ACCOUNT_USERNAME: ${{ secrets.RH_ACCOUNT_USERNAME }}
+  #RH_ACCOUNT_PASSWORD: ${{ secrets.RH_ACCOUNT_PASSWORD }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup ansible environment
+        #if: steps.check.outputs.skip != 'true'
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate 
+
+          # Install dependencies
+          pip install -r requirements.txt
+
+      - name: Deploy OpenShift Cluster
+        run: |
+          source venv/bin/activate 
+          
+          INVENTORY_ARCH="arch-${{ env.CLUSTER_TOPOLOGY }}-${{ env.CLOUD_PROVIDER }}.yml"
+          echo "INVENTORY_ARCH: ${INVENTORY_ARCH}"
+
+          ansible-playbook -i "inventory/main.yml" -i "inventory/${INVENTORY_ARCH}" 1_bootstrap_cluster.yml
