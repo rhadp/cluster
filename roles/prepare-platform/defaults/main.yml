@@ -12,3 +12,6 @@ platform_user_group: "platform-users"
 
 # keycloak
 keycloak_namespace: "keycloak"
+
+# devspaces
+devspaces_app_name: "auto-devspaces"

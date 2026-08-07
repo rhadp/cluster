@@ -29,10 +29,6 @@
       include_role:
         name: roles/setup-auth
 
-    #- name: configure gitops
-    #  include_role:
-    #    name: roles/setup-gitops
-
     - name: prepare the platform
       include_role:
         name: roles/prepare-platform

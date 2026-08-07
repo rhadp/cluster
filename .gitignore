@@ -5,6 +5,8 @@ inventory/secrets/
 # my local files
 hack/
 hack.md
+hack.yml
+hack.sh
 **hack**.yml
 cheatsheet.md
 hacking.md
