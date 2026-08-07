@@ -27,11 +27,11 @@
     - default_nobody_password is defined
     - default_line is succeeded
 
-- name: setup rbac  
-  import_tasks: setup_rbac.yml
+#- name: setup rbac  
+#  import_tasks: setup_rbac.yml
 
-- name: setup keycloak
-  import_tasks: setup_keycloak.yml
+#- name: setup keycloak
+#  import_tasks: setup_keycloak.yml
 
 # prepare for the htpasswd oauth provider
 
