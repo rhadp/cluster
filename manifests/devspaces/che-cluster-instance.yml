@@ -10,9 +10,9 @@ spec:
     cheServer:
       debug: false
       logLevel: INFO
-      clusterRoles:
-        - platform-admin-access-role
-        - pipelines-admin-access-role
+      #clusterRoles:
+      #  - platform-admin-access-role
+      #  - pipelines-admin-access-role
 
     dashboard:
       logLevel: ERROR
@@ -72,9 +72,9 @@ spec:
     #  template: devspaces-<username>
 
     user:
-      clusterRoles:
-        - platform-access-role
-        - pipelines-access-role
+      #clusterRoles:
+      #  - platform-access-role
+      #  - pipelines-access-role
 
     imagePullPolicy: Always # IfNotPresent
     deploymentStrategy: Recreate

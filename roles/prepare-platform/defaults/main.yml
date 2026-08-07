@@ -12,8 +12,5 @@ cluster_admin_group: "cluster-admins"
 platform_admin_group: "platform-admins"
 platform_user_group: "platform-users"
 
-# keycloak
-keycloak_namespace: "keycloak"
-
 # devspaces
 devspaces_app_name: "auto-devspaces"
