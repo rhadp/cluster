@@ -33,6 +33,10 @@
       include_role:
         name: roles/prepare-platform
 
+    - name: setup the platform
+      include_role:
+        name: roles/setup-platform
+
     - name: show web console url
       debug:
         msg: "Access the web-console: https://console-openshift-console.apps.{{ cluster_name }}.{{ cluster_sub_domain }}"
