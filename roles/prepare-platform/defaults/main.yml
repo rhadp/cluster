@@ -7,10 +7,5 @@ pipelines_subscription_starting_csv: "openshift-pipelines-operator-rh.v1.22.4"
 gitops_subscription_channel: "latest"
 gitops_subscription_starting_csv: "openshift-gitops-operator.v1.21.1"
 
-# default platform groups (also defined in setup-auth)
-cluster_admin_group: "cluster-admins"
-platform_admin_group: "platform-admins"
-platform_user_group: "platform-users"
-
 # devspaces
 devspaces_app_name: "auto-devspaces"

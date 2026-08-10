@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: kc-postgresql
-  namespace: {{ keycloak_namespace }}
+  namespace: {{ platform_keycloak_namespace }}
 spec:
   serviceName: kc-postgresql-service
   selector:

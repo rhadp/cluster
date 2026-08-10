@@ -3,7 +3,7 @@ apiVersion: k8s.keycloak.org/v2beta1
 kind: KeycloakRealmImport
 metadata:
   name: openshift-realm
-  namespace: {{ keycloak_namespace }}
+  namespace: {{ platform_keycloak_namespace }}
 spec:
   keycloakCRName: keycloak
   realm:

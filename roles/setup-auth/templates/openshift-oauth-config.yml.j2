@@ -21,7 +21,7 @@ spec:
         preferredUsername:
           - preferred_username
       extraScopes: []
-      issuer: https://keycloak-{{ keycloak_namespace }}.apps.{{ cluster_name }}.{{ cluster_sub_domain }}/realms/openshift
+      issuer: https://keycloak-{{ platform_keycloak_namespace }}.apps.{{ cluster_name }}.{{ cluster_sub_domain }}/realms/openshift
   
   - name: OpenShift
     mappingMethod: claim

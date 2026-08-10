@@ -10,7 +10,7 @@
     subscription_channel: "{{ keycloak_subscription_channel }}"
     subscription_starting_csv: "{{ keycloak_subscription_starting_csv }}"
     operator_deployment_name: "rhbk-operator"
-    operator_namespace: "{{ keycloak_namespace}}"
+    operator_namespace: "{{ platform_keycloak_namespace}}"
     operator_group_name: "keycloak"
     create_operator_namespace: true
     create_operator_group: true
@@ -36,7 +36,7 @@
   k8s_info:
     api_version: v1
     kind: StatefulSet
-    namespace: "{{ keycloak_namespace }}"
+    namespace: "{{ platform_keycloak_namespace }}"
     name: "keycloak"
     kubeconfig: "{{ local_kubeconfig_file }}"
   register: r_statefulset
@@ -64,7 +64,7 @@
   k8s_info:
     api_version: v1
     kind: StatefulSet
-    namespace: "{{ keycloak_namespace }}"
+    namespace: "{{ platform_keycloak_namespace }}"
     name: "keycloak"
     kubeconfig: "{{ local_kubeconfig_file }}"
   register: r_statefulset

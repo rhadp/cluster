@@ -2,7 +2,7 @@ apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
   name: keycloak
-  namespace: {{ keycloak_namespace }}
+  namespace: {{ platform_keycloak_namespace }}
 spec:
   instances: 1
   db:
@@ -20,6 +20,6 @@ spec:
   http:
     httpEnabled: true
   hostname:
-    hostname: keycloak-{{ keycloak_namespace }}.apps.{{ cluster_name }}.{{ cluster_sub_domain }}
+    hostname: keycloak-{{ platform_keycloak_namespace }}.apps.{{ cluster_name }}.{{ cluster_sub_domain }}
   proxy:
     headers: xforwarded # double check your reverse proxy sets and overwrites the X-Forwarded-* headers

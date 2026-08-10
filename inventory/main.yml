@@ -14,16 +14,17 @@ all:
     cluster_sub_domain: "{{ lookup('env', 'CLUSTER_BASE_DOMAIN') }}"
 
     # create a second set of ARM worker nodes if primary is x86_64 based
-    setup_arm_worker_nodes: "{{ lookup('env', 'CLUSTER_ARM_NODES') | default('false', true) }}"
-     # create a bare-metal ARM worker node (currently AWS only)
+    setup_arm_worker_nodes:
+      "{{ lookup('env', 'CLUSTER_ARM_NODES') | default('false', true) }}"
+      # create a bare-metal ARM worker node (currently AWS only)
     setup_baremetal_worker_node: "{{ lookup('env', 'CLUSTER_BAREMETAL_NODES') | default('false', true) }}"
     # setup cnv operator on bare-metal ARM worker node (currently AWS only)
     setup_virtualization: "{{ lookup('env', 'CLUSTER_VIRT') | default('false', true) }}"
-    
+
     #
     # credentials used to deploy the cluster
     #
-    
+
     # pull secret, see https://console.redhat.com/openshift/create
     pull_secret_file: "{{ lookup('env', 'PULL_SECRET_FILE') | default('inventory/secrets/pull-secret.txt', true) }}"
 
@@ -33,7 +34,7 @@ all:
     aws_default_region: "{{ lookup('env', 'AWS_REGION') }}"
 
     # gcp infrastructure credentials
-    gcp_service_account_key_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_KEY_FILE') }}" 
+    gcp_service_account_key_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_KEY_FILE') }}"
     gcp_service_account_email: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_EMAIL') }}"
     gcp_project_id: "{{ lookup('env', 'GCP_PROJECT_ID') }}"
     gcp_organization_id: "{{ lookup('env', 'GCP_ORGANIZATION_ID') }}"
