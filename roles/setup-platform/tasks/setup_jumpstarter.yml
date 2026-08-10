@@ -1,5 +1,3 @@
-# Implement your install deployment tasks here
-# -------------------------------------------------
 
 - name: create jumpstarter namespace and stuff
   k8s:

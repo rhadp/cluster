@@ -1,18 +1,20 @@
+# Implement your install deployment tasks here
+# -------------------------------------------------
 
-- name: create builder namespace and stuff
+- name: create devspaces app
   k8s:
     definition: "{{ lookup('template', item ) | from_yaml }}"
     state: present
     apply: yes
     kubeconfig: "{{ local_kubeconfig_file }}"
   loop:
-    - app-builder.yml.j2
+    - app-jumpstarter.yml.j2
 
-- name: wait for the builder app to be ready
+- name: wait for the devspaces app to be ready
   k8s_info:
     api_version: argoproj.io/v1alpha1
     kind: Application
-    name: auto-builder
+    name: auto-devspaces
     namespace: "{{ gitops_namespace }}"
     kubeconfig: "{{ local_kubeconfig_file }}"
   register: r_application
@@ -24,3 +26,7 @@
     - r_application.resources[0].status.sync is defined
     - r_application.resources[0].status.sync.status is defined
     - r_application.resources[0].status.sync.status == 'Synced'
+
+- name: pause to allow the operator to settle
+  pause:
+    seconds: 120

@@ -7,6 +7,10 @@
   when: platform_deploy_builder | bool == true
   import_tasks: setup_builder.yml
 
+- name: setup devspaces
+  when: platform_deploy_devspaces | bool == true
+  import_tasks: setup_devspaces.yml
+  
 - name: give platform_user_group viewer access to platform_builder_namespace
   when: platform_deploy_builder | bool == true
   shell: |
