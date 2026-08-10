@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: "rhas-platform"
+  name: "platform-defaults"
   namespace: "{{ gitops_namespace }}"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
