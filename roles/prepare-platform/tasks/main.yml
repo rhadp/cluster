@@ -13,6 +13,7 @@
     create_operator_namespace: true
     create_operator_group: true
 
+# install the pipelines operator
 - name: install pipelines operator
   include_role:
     name: roles/install-operator
