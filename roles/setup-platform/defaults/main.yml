@@ -1,0 +1,5 @@
+---
+# defaults
+
+# platform overrides
+jumpstarter_image: "quay.io/jumpstarter-dev/jumpstarter-controller:latest" 

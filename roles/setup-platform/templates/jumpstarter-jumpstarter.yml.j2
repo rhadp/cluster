@@ -1,0 +1,62 @@
+﻿apiVersion: operator.jumpstarter.dev/v1alpha1
+kind: Jumpstarter
+metadata:
+  name: auto-jumpstarter
+  labels:
+    app.kubernetes.io/name: jumpstarter-operator
+  namespace: "{{ platform_jumpstarter_namespace }}"
+spec:
+  authentication:
+    autoProvisioning:
+      enabled: false
+    internal:
+      enabled: true
+      prefix: 'internal:'
+      tokenLifetime: 43800h
+    k8s:
+      enabled: true
+    jwt:
+    - issuer:
+        url: https://keycloak-{{ platform_keycloak_namespace }}.apps.{{ cluster_base_domain }}/realms/openshift
+        audiences:
+        - jumpstarter-cli
+        certificateAuthority: |
+          {{ ingress_ca_certificate | indent(10) }}
+        audienceMatchPolicy: MatchAny
+      claimMappings:
+        username:
+          claim: "preferred_username"
+          prefix: "keycloak:"
+        #groups:
+        #  claim: "groups"
+        #  prefix: ""
+  certManager:
+    enabled: true
+    server:
+      issuerRef:
+        name: "letsencrypt-prod"
+        group: cert-manager.io
+        kind: ClusterIssuer
+  controller:
+    exporterOptions:
+      offlineTimeout: 180s
+    grpc:
+      keepalive:
+        intervalTime: 10s
+        minTime: 1s
+        permitWithoutStream: true
+        timeout: 180s
+    image: '{{ jumpstarter_image }}'
+    imagePullPolicy: IfNotPresent
+    replicas: 1
+  routers:
+    grpc:
+      keepalive:
+        intervalTime: 10s
+        minTime: 1s
+        permitWithoutStream: true
+        timeout: 180s
+    image: '{{ jumpstarter_image }}'
+    imagePullPolicy: IfNotPresent
+    replicas: 1
+  baseDomain: "{{ platform_jumpstarter_namespace }}.apps.{{ cluster_base_domain }}"

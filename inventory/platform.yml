@@ -34,6 +34,10 @@ all:
     platform_admin_group: "platform-admins"
     platform_user_group: "platform-users"
 
+    # default jumpstarter groups
+    jumpstarter_admin_group: "jumpstarter-admins"
+    jumpstarter_user_group: "jumpstarter-users"
+
     #
     # misc configuration
     #
