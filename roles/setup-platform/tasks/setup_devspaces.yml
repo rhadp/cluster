@@ -8,7 +8,7 @@
     apply: yes
     kubeconfig: "{{ local_kubeconfig_file }}"
   loop:
-    - app-jumpstarter.yml.j2
+    - app-devspaces.yml.j2
 
 - name: wait for the devspaces app to be ready
   k8s_info:
