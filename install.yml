@@ -12,7 +12,7 @@
     - name: get the installer binary
       include_role:
         name: roles/installer-binary
-        
+
     - name: bootstrap the openshift cluster
       include_role:
         name: roles/create-cluster
@@ -20,6 +20,14 @@
     - name: gather cluster facts (again)
       include_role:
         name: roles/gather-cluster-facts
+
+    # setup the worker nodes
+    - name: setup the arm worker nodes
+      block:
+        - name: setup the arm worker nodes
+          when: cloud_provider == "aws"
+          include_role:
+            name: roles/setup-worker-nodes-aws
 
     - name: configure certificates
       include_role:

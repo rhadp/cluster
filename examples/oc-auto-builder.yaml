@@ -1,0 +1,113 @@
+apiVersion: automotive.sdv.cloud.redhat.com/v1alpha1
+kind: OperatorConfig
+metadata:
+  labels:
+    app.kubernetes.io/name: automotive-dev-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: auto-builder
+  namespace: automotive-dev-operator-system
+spec:
+  # OSBuilds configuration for OS build operations
+  osBuilds:
+    # Enable Tekton tasks for OS builds
+    enabled: true
+
+    # Size for persistent volume claims created for build workspaces
+    # Default: "8Gi"
+    pvcSize: "8Gi"
+
+    # Optional: Use memory-backed volumes for faster builds
+    # Default: false (disk-backed)
+    useMemoryVolumes: true
+
+    # Optional: Use memory-backed volumes for container storage
+    # Controls /var/lib/containers/storage, /run/osbuild, and /var/tmp volumes
+    # Default: false (disk-backed)
+    # Set to true for memory-backed storage (faster but uses more memory)
+    useMemoryContainerStorage: true
+
+    # Optional: Size limit for memory-backed volumes
+    # Only used when useMemoryVolumes or useMemoryContainerStorage is true
+    # Example: "2Gi"
+    memoryVolumeSize: "8Gi"
+
+    # Optional: Node selector for scheduling build pods to specific nodes
+    # Build pods will only run on nodes with matching labels
+    nodeSelector:
+      auto.node-role/builder: "true"
+
+    # Optional: Tolerations for exclusive access to tainted nodes
+    # Enables scheduling on nodes tainted for dedicated automotive builds
+    # First taint nodes: kubectl taint nodes <node> automotive.sdv.cloud.redhat.com/dedicated=builds:NoSchedule
+    # Then configure tolerations to access those nodes:
+    # tolerations:
+    # - key: "automotive.sdv.cloud.redhat.com/dedicated"
+    #   operator: "Equal"
+    #   value: "builds"
+    #   effect: "NoSchedule"
+    # - key: "node.kubernetes.io/dedicated"
+    #   operator: "Equal"
+    #   value: "automotive"
+    #   effect: "NoExecute"
+
+  # Monitoring configuration for Prometheus ServiceMonitor
+  # Requires user-workload-monitoring enabled on the cluster
+  # monitoring:
+  #   enabled: true
+  #   # Optional: scrape interval (default: 30s)
+  #   # interval: "15s"
+
+  # BuildAPI configuration for the Build API server
+  buildAPI:
+    # Optional: Authentication configuration for OIDC/JWT providers
+    # authentication:
+    #   # OIDC client ID for caib CLI
+    #   clientId: "caib-cli"
+    #   # Internal authentication configuration
+    #   internal:
+    #     prefix: "internal:"
+    #   # JWT/OIDC authentication providers
+    #   jwt:
+    #     # Option 1: inline PEM CA certificate
+    #     - issuer:
+    #         url: "https://sso.redhat.com/auth/realms/EmployeeIDP"
+    #         audiences:
+    #           - "caib-cli"
+    #         certificateAuthority: |
+    #           -----BEGIN CERTIFICATE-----
+    #           <PEM content>
+    #           -----END CERTIFICATE-----
+    #       claimMappings:
+    #         username:
+    #           claim: "preferred_username"
+    #           prefix: ""
+    #
+    #     # Option 2: CA certificate from a Kubernetes Secret (e.g. OpenShift ingress CA)
+    #     # The operator reads the secret at startup and every ~60s, so CA rotations
+    #     # are picked up automatically without editing the OperatorConfig.
+    #     - issuer:
+    #         url: "https://keycloak.example.com/realms/openshift"
+    #         audiences:
+    #           - "caib-cli"
+    #         certificateAuthoritySecret:
+    #           name: router-ca
+    #           namespace: openshift-ingress-operator
+    #           key: tls.crt
+    #       claimMappings:
+    #         username:
+    #           claim: "preferred_username"
+    #           prefix: ""
+    #
+    #     # Option 3: CA certificate from a ConfigMap (e.g. cluster root CA)
+    #     - issuer:
+    #         url: "https://keycloak.example.com/realms/openshift"
+    #         audiences:
+    #           - "caib-cli"
+    #         certificateAuthorityConfigMap:
+    #           name: kube-root-ca.crt
+    #           namespace: kube-system
+    #           key: ca.crt
+    #       claimMappings:
+    #         username:
+    #           claim: "preferred_username"
+    #           prefix: ""

@@ -1,0 +1,16 @@
+
+# add the arm worker nodes to the cluster 
+- name: configure the 'arm' cluster topology (AWS)
+  when: setup_arm_worker_nodes | bool == true and cloud_provider == "aws"
+  block:
+    - name: add the arm machine sets
+      k8s:
+        definition: "{{ lookup('template', item ) | from_yaml }}"
+        state: present
+        apply: yes
+        kubeconfig: "{{ local_kubeconfig_file }}"
+      loop:
+        - "machineset_aws_arm_a.yml.j2"
+        - "machineset_aws_arm_b.yml.j2"
+        - "machineset_aws_arm_c.yml.j2"
+

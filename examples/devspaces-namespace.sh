@@ -27,3 +27,4 @@ metadata:
 EOF
 
 oc adm policy add-role-to-user admin $USER_NAME -n $NAMESPACE
+#oc adm policy add-cluster-role-to-user pipelines-access-role system:serviceaccounts:pipelines -n $NAMESPACE

@@ -1,0 +1,76 @@
+
+# add the bare-metal worker node to the cluster (currently aws only)
+- name: configure the 'metal' cluster topology
+  when: setup_baremetal_worker_node | bool == true
+  block:
+    # add the bare-metal worker node to the cluster
+    - name: add the bare-metal machine sets
+      k8s:
+        definition: "{{ lookup('template', item ) | from_yaml }}"
+        state: present
+        apply: yes
+        kubeconfig: "{{ local_kubeconfig_file }}"
+      loop:
+        - "machineset_aws_metal.yml.j2"
+
+    - name: wait for metal node(s) to be ready
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Node
+        label_selectors:
+          - "node.kubernetes.io/instance-type={{ aws_metal_instance_type }}"
+        kubeconfig: "{{ local_kubeconfig_file }}"
+      register: r_nodes
+      until:
+        - r_nodes.resources | length | int == aws_metal_instance_count | int
+      delay: 30
+      retries: 120
+
+    - name: find metal nodes
+      k8s_info:
+        api_version: v1
+        kind: Node
+        label_selectors:
+          - node.kubernetes.io/instance-type={{ aws_metal_instance_type }}
+        kubeconfig: "{{ local_kubeconfig_file }}"
+      register: found_metal_nodes
+
+    - name: label metal nodes (builder)
+      shell: |
+        oc label node {{ item }} {{ platform_prefix }}.node-role/builder='true' \
+        --overwrite=true \
+        --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+        oc label node {{ item }} {{ platform_prefix }}.node-role/metal='true' \
+        --overwrite=true \
+        --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+      with_items:
+        - "{{ found_metal_nodes.resources | map(attribute='metadata.name') | list }}"
+
+# setup virtualization (currently aws only)
+- name: create cnv
+  when: setup_virtualization | bool == true and setup_baremetal_worker_node | bool == true and cloud_provider == "aws"
+  block:
+    - name: install cnv operator
+      include_role:
+        name: roles/install-operator
+      vars:
+        operator_name: "{{ cnv_operator_name }}"
+        operator_subscription_name: "{{ cnv_operator_subscription_name }}"
+        subscription_channel: "{{ cnv_subscription_channel }}"
+        subscription_starting_csv: "{{ cnv_subscription_starting_csv }}"
+        operator_deployment_name: "{{ cnv_operator_deployment_name }}"
+        operator_namespace: "{{ cnv_operator_namespace }}"
+        operator_group_name: "{{ cnv_operator_group }}"
+        create_operator_namespace: true
+        create_operator_group: true
+        manage_all_namespaces: false
+
+    - name: create cnv
+      k8s:
+        definition: "{{ lookup('template', item) | from_yaml }}"
+        state: present
+        apply: yes
+        kubeconfig: "{{ local_kubeconfig_file }}"
+      loop:
+        - hyperconverged.yml.j2

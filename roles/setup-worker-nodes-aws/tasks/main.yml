@@ -1,0 +1,34 @@
+# un-label the existing ARM worker nodes that are labeled as builder=true
+
+- name: re-label existing ARM worker nodes
+  when: setup_baremetal_worker_node | bool == true and cluster_topology == 'compact'
+  block:
+    - name: find existing ARM worker nodes
+      k8s_info:
+        api_version: v1
+        kind: Node
+        label_selectors:
+          - node-role.kubernetes.io/worker
+          - kubernetes.io/arch=arm64
+          - "{{ platform_prefix }}.node-role/builder=true"
+        kubeconfig: "{{ local_kubeconfig_file }}"
+      register: found_arm_worker_nodes
+
+    - name: re-label ARM worker nodes (builder=false)
+      shell: |
+        oc label node {{ item }} {{ platform_prefix }}.node-role/builder='false' \
+        --overwrite=true \
+        --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+      with_items:
+        - "{{ found_arm_worker_nodes.resources | map(attribute='metadata.name') | list }}"
+
+# add the arm worker nodes to the cluster 
+- name: setup ARM worker nodes
+  when: setup_arm_worker_nodes | bool == true
+  import_tasks: setup_arm.yml
+
+# add the bare-metal worker node to the cluster (currently aws only)
+- name: setup bare-metal worker nodes
+  when: setup_baremetal_worker_node | bool == true
+  import_tasks: setup_metal.yml
+
