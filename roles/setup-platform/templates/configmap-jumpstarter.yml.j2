@@ -1,0 +1,16 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: jumpstarter-devspaces-config
+  namespace: "{{ platform_devspaces_namespace }}"
+  labels:
+    app.kubernetes.io/part-of: che.eclipse.org
+    app.kubernetes.io/component: workspaces-config
+    controller.devfile.io/watch-configmap: "true"
+    controller.devfile.io/mount-to-devworkspace: "true"
+  annotations:
+    controller.devfile.io/mount-as: env
+data:
+  JUMPSTARTER_GRPC_ENDPOINT: "grpc.{{ platform_jumpstarter_namespace }}.apps.{{ cluster_name }}.{{ cluster_sub_domain }}"
+  JUMPSTARTER_LOGIN_ENDPOINT: "login.{{ platform_jumpstarter_namespace }}.apps.{{ cluster_name }}.{{ cluster_sub_domain }}"
+  JUMPSTARTER_NAMESPACE: "{{ platform_jumpstarter_namespace }}"
