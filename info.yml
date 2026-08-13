@@ -1,0 +1,14 @@
+- name: show the cluster info
+  hosts: localhost
+  vars:
+    # set the following to control the install/uninstall process
+    become_override: false
+
+  tasks:
+    - name: gather cluster facts
+      include_role:
+        name: roles/gather-cluster-facts
+
+    - name: show web console url
+      debug:
+        msg: "Access the web-console: https://console-openshift-console.apps.{{ cluster_name }}.{{ cluster_sub_domain }}"
