@@ -27,4 +27,11 @@ metadata:
 EOF
 
 oc adm policy add-role-to-user admin $USER_NAME -n $NAMESPACE
-#oc adm policy add-cluster-role-to-user pipelines-access-role system:serviceaccounts:pipelines -n $NAMESPACE
+
+echo "Waiting for pipeline serviceaccount in $NAMESPACE..."
+until oc get serviceaccounts -n "$NAMESPACE" 2>/dev/null | grep -q pipeline; do
+    sleep 10
+done
+
+oc adm policy add-cluster-role-to-user pipelines-access-role "system:serviceaccount:$NAMESPACE:pipeline" -n $NAMESPACE
+oc adm policy add-cluster-role-to-user jumpstarter-access-role "system:serviceaccount:$NAMESPACE:pipeline" -n $NAMESPACE
