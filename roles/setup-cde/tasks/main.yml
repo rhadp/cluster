@@ -1,5 +1,3 @@
-# Implement your install deployment tasks here
-# -------------------------------------------------
 
 - name: create devspaces app
   k8s:

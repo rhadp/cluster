@@ -41,9 +41,14 @@
       include_role:
         name: roles/prepare-platform
 
-    - name: setup the platform
+    - name: setup the cde
+      when: platform_deploy_devspaces | bool == true
       include_role:
-        name: roles/setup-platform
+        name: roles/setup-cde
+
+#    - name: setup the platform
+#      include_role:
+#        name: roles/setup-platform
 
     - name: show web console url
       debug:

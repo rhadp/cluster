@@ -9,9 +9,9 @@
       include_role:
         name: roles/gather-cluster-facts
 
-    - name: prepare the platform
-      include_role:
-        name: roles/prepare-platform
+#    - name: prepare the platform
+#      include_role:
+#        name: roles/prepare-platform
 
     - name: setup the platform
       include_role:

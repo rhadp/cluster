@@ -68,11 +68,11 @@
     ]}}}' \
     --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
 
-- name: enable pipelines, gitops plugins
-  shell: |
-    oc patch console.operator.openshift.io/cluster --type='merge' \
-    -p '{"spec":{"plugins":["gitops-plugin","pipelines-console-plugin"]}}' \
-    --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+#- name: enable pipelines, gitops plugins
+#  shell: |
+#    oc patch console.operator.openshift.io/cluster --type='merge' \
+#    -p '{"spec":{"plugins":["gitops-plugin","pipelines-console-plugin"]}}' \
+#    --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
 
 - name: remove self-provisioner
   when: remove_self_provisioning | bool == true
