@@ -24,3 +24,17 @@
     - r_application.resources[0].status.sync is defined
     - r_application.resources[0].status.sync.status is defined
     - r_application.resources[0].status.sync.status == 'Synced'
+
+#- name: give platform_user_group viewer access to platform_builder_namespace
+#  when: platform_deploy_builder | bool == true
+#  shell: |
+#    oc adm policy add-role-to-group view {{ platform_user_group }} \
+#      -n {{ platform_builder_namespace }} \
+#      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
+#- name: give jumpstarter_user_group edit access to platform_jumpstarter_namespace
+#  when: platform_deploy_jumpstarter | bool == true
+#  shell: |
+#    oc adm policy add-role-to-group edit {{ jumpstarter_user_group }} \
+#      -n {{ platform_jumpstarter_namespace }} \
+#      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"

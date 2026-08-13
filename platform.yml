@@ -13,9 +13,20 @@
 #      include_role:
 #        name: roles/prepare-platform
 
-    - name: setup the platform
+    - name: setup the cde
+      when: platform_deploy_devspaces | bool == true
       include_role:
-        name: roles/setup-platform
+        name: roles/setup-cde
+
+    - name: setup jumpstarter
+      when: platform_deploy_jumpstarter | bool == true
+      include_role:
+        name: roles/setup-jumpstarter
+
+    - name: setup the builder
+      when: platform_deploy_builder | bool == true
+      include_role:
+        name: roles/setup-builder
 
     - name: show web console url
       debug:
