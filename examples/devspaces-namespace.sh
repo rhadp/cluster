@@ -35,3 +35,5 @@ done
 
 oc adm policy add-cluster-role-to-user pipelines-access-role "system:serviceaccount:$NAMESPACE:pipeline" -n $NAMESPACE
 oc adm policy add-cluster-role-to-user jumpstarter-access-role "system:serviceaccount:$NAMESPACE:pipeline" -n $NAMESPACE
+oc adm policy add-cluster-role-to-user system:image-puller "system:serviceaccount:$NAMESPACE:pipeline" -n $NAMESPACE
+
