@@ -21,7 +21,7 @@
     mode: 0755
   with_items:
     - "$HOME/.kube"
-    - "$HOME/.ssh"
+    - "{{ cluster_ssh_key_dir }}"
     - "{{ cluster_metadata_dir }}/{{ cluster_fqn }}"
 
 # FIXME: check if the keys already exist, otherwise generate them

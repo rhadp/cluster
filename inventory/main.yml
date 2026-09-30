@@ -71,7 +71,7 @@ all:
     openshift_install_dir: "bin"
 
     # key used for the cluster nodes
-    cluster_ssh_key_dir: "$HOME/.ssh"
+    cluster_ssh_key_dir: "inventory/secrets/ssh"
 
     # local directory where the cluster metadata will be stored
     cluster_metadata_dir: "$HOME/.openshift"
