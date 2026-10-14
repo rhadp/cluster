@@ -1,0 +1,22 @@
+- name: configure the openshift cluster
+  hosts: localhost
+  vars:
+    # set the following to control the install/uninstall process
+    become_override: false
+
+  tasks:
+    - name: gather cluster facts
+      include_role:
+        name: roles/gather-cluster-facts
+
+    # setup the worker nodes
+    - name: setup the arm worker nodes
+      block:
+        - name: setup the arm worker nodes
+          when: cloud_provider == "aws"
+          include_role:
+            name: roles/setup-worker-nodes-aws
+
+    - name: show web console url
+      debug:
+        msg: "Access the web-console: https://console-openshift-console.apps.{{ cluster_name }}.{{ cluster_sub_domain }}"
