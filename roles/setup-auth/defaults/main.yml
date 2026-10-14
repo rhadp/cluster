@@ -3,4 +3,4 @@
 
 # keycloak subscription
 keycloak_subscription_channel: "stable-v26.6"
-keycloak_subscription_starting_csv: "rhbk-operator.v26.6.4-opr.1" 
+keycloak_subscription_starting_csv: "rhbk-operator.v26.6.7-opr.1" 
