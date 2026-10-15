@@ -9,15 +9,6 @@
       include_role:
         name: roles/gather-cluster-facts
 
-#    - name: prepare the platform
-#      include_role:
-#        name: roles/prepare-platform
-
-#    - name: setup the cde
-#      when: platform_deploy_devspaces | bool == true
-#      include_role:
-#        name: roles/setup-cde
-
     - name: setup jumpstarter
       when: platform_deploy_jumpstarter | bool == true
       include_role:

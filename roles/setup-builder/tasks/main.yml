@@ -1,4 +1,10 @@
 
+- name: delete default operator config
+  shell: |
+    oc delete operatorconfig config \
+      -n {{ platform_builder_namespace }} \
+      --kubeconfig="$HOME/.kube/{{ cluster_fqn }}"
+
 - name: create builder namespace and stuff
   k8s:
     definition: "{{ lookup('template', item ) | from_yaml }}"
@@ -24,6 +30,15 @@
     - r_application.resources[0].status.sync is defined
     - r_application.resources[0].status.sync.status is defined
     - r_application.resources[0].status.sync.status == 'Synced'
+
+- name: deploy the builder operator config
+  k8s:
+    definition: "{{ lookup('template', item ) | from_yaml }}"
+    state: present
+    apply: yes
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  loop:
+    - oc-auto-builder.yml.j2
 
 #- name: give platform_user_group viewer access to platform_builder_namespace
 #  when: platform_deploy_builder | bool == true
