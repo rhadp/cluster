@@ -19,6 +19,7 @@ spec:
     duplicateEmailsAllowed: false
     resetPasswordAllowed: false
     bruteForceProtected: true
+    ssoSessionIdleTimeout: 3600
 
     clients:
       - name: openshift
@@ -59,6 +60,7 @@ spec:
         attributes:
           oauth2.device.authorization.grant.enabled: "true"
           access.token.lifespan: "3600"
+          client.session.idle.timeout: "3600"
         protocolMappers:
           - name: "jumpstarter-audience"
             protocol: "openid-connect"
