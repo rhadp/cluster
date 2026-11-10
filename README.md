@@ -57,6 +57,14 @@ Save your Red Hat pull secret to `inventory/secrets/pull-secret.txt`.
 ./install.sh
 ```
 
+Optionally pass a secrets filename from `inventory/secrets/` (defaults to `.env`):
+
+```bash
+./install.sh my-cluster.env
+```
+
+The script aborts if the secrets file does not exist.
+
 Takes **60–90 minutes**. The deployment runs through these stages:
 
 1. Download the OpenShift installer
@@ -137,9 +145,13 @@ This applies your manifest changes without reprovisioning the underlying cluster
 
 | Command | Purpose |
 |---|---|
-| `./install.sh` | Full end-to-end deployment (provision cluster + deploy platform) |
-| `./platform.sh` | Redeploy platform components on an existing cluster |
-| `./destroy.sh` | Tear down the entire cluster and cloud resources |
+| `./install.sh [secrets-file]` | Full end-to-end deployment (provision cluster + deploy platform) |
+| `./platform.sh [secrets-file]` | Redeploy platform components on an existing cluster |
+| `./destroy.sh [secrets-file]` | Tear down the entire cluster and cloud resources |
+| `./cluster.sh [secrets-file]` | Provision / manage the OpenShift cluster only |
+| `./info.sh [secrets-file]` | Show cluster info |
+
+`[secrets-file]` is optional and resolved under `inventory/secrets/` (default: `.env`). Scripts abort if the file is missing.
 
 ## Contributing
 
