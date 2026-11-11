@@ -7,8 +7,8 @@ workshop_user_count: "{{ lookup('env', 'WORKSHOP_USER_COUNT') | default('50', tr
 workshop_user_prefix: "{{ lookup('env', 'WORKSHOP_USER_PREFIX') | default('user', true) }}"
 workshop_user_password: "{{ lookup('env', 'WORKSHOP_USER_PASSWORD') | default('workshop', true) }}"
 workshop_user_email_domain: "{{ lookup('env', 'WORKSHOP_USER_EMAIL_DOMAIN') | default('example.com', true) }}"
-# force a password change on first login
-workshop_user_password_temporary: false
+# true = users must set a new password on first login; false = keep the shared password
+workshop_user_password_temporary: true
 
 # Keycloak groups the workshop accounts are added to (must already exist in the realm)
 workshop_user_groups:
