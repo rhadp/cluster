@@ -1,0 +1,14 @@
+- name: create the workshop setup
+  hosts: localhost
+  vars:
+    # set the following to control the install/uninstall process
+    become_override: false
+
+  tasks:
+    - name: gather cluster facts
+      include_role:
+        name: roles/gather-cluster-facts
+
+    - name: create the workshop setup
+      include_role:
+        name: roles/create_workshop_setup

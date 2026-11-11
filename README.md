@@ -147,6 +147,7 @@ This applies your manifest changes without reprovisioning the underlying cluster
 |---|---|
 | `./install.sh [secrets-file]` | Full end-to-end deployment (provision cluster + deploy platform) |
 | `./platform.sh [secrets-file]` | Redeploy platform components on an existing cluster |
+| `./workshop.sh` | Add workshop accounts (`user01`..`user50` by default, see `WORKSHOP_*` in `.env.example`) to the Keycloak realm of an existing cluster |
 | `./destroy.sh [secrets-file]` | Tear down the entire cluster and cloud resources |
 | `./cluster.sh [secrets-file]` | Provision / manage the OpenShift cluster only |
 | `./info.sh [secrets-file]` | Show cluster info |

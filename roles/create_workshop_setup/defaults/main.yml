@@ -1,0 +1,25 @@
+---
+# Default values for the role. To override, set the WORKSHOP_* variables in inventory/secrets/.env
+# or pass them as extra vars (e.g. -e workshop_user_count=20).
+
+# workshop accounts: <prefix>01 .. <prefix><count>
+workshop_user_count: "{{ lookup('env', 'WORKSHOP_USER_COUNT') | default('50', true) }}"
+workshop_user_prefix: "{{ lookup('env', 'WORKSHOP_USER_PREFIX') | default('user', true) }}"
+workshop_user_password: "{{ lookup('env', 'WORKSHOP_USER_PASSWORD') | default('workshop', true) }}"
+workshop_user_email_domain: "{{ lookup('env', 'WORKSHOP_USER_EMAIL_DOMAIN') | default('example.com', true) }}"
+# force a password change on first login
+workshop_user_password_temporary: false
+
+# Keycloak groups the workshop accounts are added to (must already exist in the realm)
+workshop_user_groups:
+  - "{{ platform_user_group }}"
+  - "{{ jumpstarter_user_group }}"
+
+# what to do with accounts that already exist: SKIP, OVERWRITE or FAIL
+workshop_if_resource_exists: "SKIP"
+
+# Keycloak instance and realm created by roles/setup-auth
+workshop_keycloak_realm: "openshift"
+workshop_keycloak_url: "https://keycloak-{{ platform_keycloak_namespace }}.apps.{{ cluster_name }}.{{ cluster_sub_domain }}"
+workshop_keycloak_admin_secret: "keycloak-temp-admin-secret"
+workshop_keycloak_validate_certs: true

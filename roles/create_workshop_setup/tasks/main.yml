@@ -1,0 +1,52 @@
+# add the workshop accounts to the Keycloak realm created by roles/setup-auth.
+# uses the partial import API, so the existing realm configuration is left untouched.
+
+- name: get the keycloak admin credentials
+  k8s_info:
+    api_version: v1
+    kind: Secret
+    namespace: "{{ platform_keycloak_namespace }}"
+    name: "{{ workshop_keycloak_admin_secret }}"
+    kubeconfig: "{{ local_kubeconfig_file }}"
+  register: r_kc_admin_secret
+  no_log: true
+
+- name: check that the keycloak admin secret exists
+  assert:
+    that:
+      - r_kc_admin_secret.resources | length > 0
+    fail_msg: "secret {{ workshop_keycloak_admin_secret }} not found in namespace {{ platform_keycloak_namespace }}, run roles/setup-auth first"
+
+- name: get a keycloak admin access token
+  uri:
+    url: "{{ workshop_keycloak_url }}/realms/master/protocol/openid-connect/token"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: password
+      client_id: admin-cli
+      username: "{{ r_kc_admin_secret.resources[0].data.username | b64decode }}"
+      password: "{{ r_kc_admin_secret.resources[0].data.password | b64decode }}"
+    validate_certs: "{{ workshop_keycloak_validate_certs }}"
+  register: r_kc_token
+  no_log: true
+
+- name: import the workshop users into the {{ workshop_keycloak_realm }} realm
+  uri:
+    url: "{{ workshop_keycloak_url }}/admin/realms/{{ workshop_keycloak_realm }}/partialImport"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ r_kc_token.json.access_token }}"
+    body_format: json
+    body: "{{ lookup('template', 'workshop-users.yml.j2') | from_yaml }}"
+    validate_certs: "{{ workshop_keycloak_validate_certs }}"
+  register: r_kc_import
+  no_log: true # the payload contains the user passwords
+
+- name: show the import result
+  debug:
+    msg: >-
+      workshop users {{ workshop_user_prefix }}01..{{ workshop_user_prefix }}{{ '%02d' | format(workshop_user_count | int) }}:
+      added={{ r_kc_import.json.added }},
+      skipped={{ r_kc_import.json.skipped }},
+      overwritten={{ r_kc_import.json.overwritten }}
