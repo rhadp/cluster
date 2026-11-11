@@ -10,6 +10,11 @@ users:
     enabled: true
     firstName: "Workshop"
     lastName: "User {{ '%02d' | format(i) }}"
+{% if workshop_user_password_temporary | bool %}
+    # the import ignores credentials[].temporary, only the required action forces the password change
+    requiredActions:
+      - UPDATE_PASSWORD
+{% endif %}
     credentials:
       - type: password
         value: "{{ workshop_user_password }}"
