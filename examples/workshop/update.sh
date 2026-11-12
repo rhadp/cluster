@@ -38,6 +38,7 @@ for i in $(seq 1 "$USER_COUNT"); do
     FAILED+=("$USER_NAME")
   fi
 
+  sleep 3
 done
 
 echo "Done: repositories updated for $USER_COUNT users."

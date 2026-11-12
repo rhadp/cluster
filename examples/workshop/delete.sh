@@ -43,6 +43,7 @@ for i in $(seq 56 "$USER_COUNT"); do
     FAILED+=("$USER_NAME")
   fi
 
+  sleep 3
 done
 
 if [ "${#FAILED[@]}" -gt 0 ]; then
