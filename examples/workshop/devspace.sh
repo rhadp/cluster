@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
-source venv/bin/activate
+
 set -e
 
-# Create a devspaces namespace
-USER_NAME=$1
-if [ -z "$USER_NAME" ]; then
-    echo "Usage: $0 <user_name>"
-    exit 1
+if [ "$#" -ne 1 ]; then
+  echo "Usage: $(basename "$0") <username>" >&2
+  echo "  username: the user to create the devspaces namespace for (must run as cluster-admin)." >&2
+  exit 1
 fi
 
-NAMESPACE="$USER_NAME-devspaces"
+USER_NAME=$1
+
+oc get user "$USER_NAME" &>/dev/null || {
+  echo "Warning: user $USER_NAME not found" >&2
+  #exit 1
+}
+
+# Create a devspaces namespace
+NAMESPACE="devspaces-$USER_NAME"
 echo "NAMESPACE: $NAMESPACE"
-
-
 
 oc create -f - <<-EOF
 kind: Namespace
