@@ -3,7 +3,7 @@
 # or pass them as extra vars (e.g. -e workshop_user_count=20).
 
 # workshop accounts: <prefix>01 .. <prefix><count>
-workshop_user_count: "{{ lookup('env', 'WORKSHOP_USER_COUNT') | default('50', true) }}"
+workshop_user_count: "{{ lookup('env', 'WORKSHOP_USER_COUNT') | default('70', true) }}"
 workshop_user_prefix: "{{ lookup('env', 'WORKSHOP_USER_PREFIX') | default('user', true) }}"
 workshop_user_password: "{{ lookup('env', 'WORKSHOP_USER_PASSWORD') | default('workshop', true) }}"
 workshop_user_email_domain: "{{ lookup('env', 'WORKSHOP_USER_EMAIL_DOMAIN') | default('example.com', true) }}"
