@@ -25,3 +25,13 @@
 # upstream is detected (template or fork parent); pass it as 3rd arg to override
 ./examples/workshop/update-repo.sh OWNER/REPO-user GIT_PAT
 ```
+
+## Delete the users' repos
+
+```shell
+# a single repo
+./examples/workshop/delete-repo.sh OWNER/REPO-user GIT_PAT
+
+# OWNER/REPO-user01 .. user70 (asks for confirmation; WORKSHOP_ASSUME_YES=1 skips it)
+./examples/workshop/delete.sh OWNER/REPO GIT_PAT
+```
