@@ -26,6 +26,11 @@
 ./examples/workshop/update-repo.sh OWNER/REPO-user GIT_PAT
 ```
 
+For a repo generated from a template, every template commit the repo does not
+have yet is replayed as its own commit (same message and author, plus an
+`Upstream-Commit:` trailer), so the template's full history carries over.
+Changes made in the repo itself are reset first by a `chore: reset` commit.
+
 ## Delete the users' repos
 
 ```shell
