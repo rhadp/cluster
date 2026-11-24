@@ -1,0 +1,401 @@
+# Complete OperatorConfig reference for the automotive-dev-operator.
+#
+# Every field the OperatorConfig CRD accepts (automotive.sdv.cloud.redhat.com/v1alpha1,
+# api/v1alpha1/operatorconfig_types.go + notification_config.go) is listed here.
+# Values are either the operator default or an illustrative example; replace the
+# examples (hostnames, secrets, CA data, ...) before using this file.
+#
+# IMPORTANT
+# - The CR MUST be named "config" and live in the operator's namespace. The build
+#   controller, Build API, workspaces, re-seal, builder-cache and tracing code all
+#   look up exactly <operator-namespace>/config; a CR with any other name is only
+#   seen by the OperatorConfig controller and is ignored everywhere else.
+# - Keep only ONE OperatorConfig per namespace.
+# - All spec sections are optional. Omitting a field gives the default noted next to it.
+apiVersion: automotive.sdv.cloud.redhat.com/v1alpha1
+kind: OperatorConfig
+metadata:
+  labels:
+    app.kubernetes.io/name: automotive-dev-operator
+  name: config
+  namespace: "{{ platform_builder_namespace }}"
+spec:
+
+  # ---------------------------------------------------------------------------
+  # Feature gates. Unknown names are ignored. Alpha features default to off,
+  # Beta to on, GA cannot be turned off.
+  # ---------------------------------------------------------------------------
+  featureGates:
+    # Alpha: mount OCI images (e.g. ORAS) as read-only volumes in build pods.
+    # Requires the ImageVolume feature on the cluster (k8s 1.33+ beta / OCP 4.20).
+    OCIVolumes: false
+    # Alpha: outbound webhook notifications for terminal build events.
+    # Required for spec.webhookNotifications to take effect.
+    WebhookNotifications: false
+
+  # ---------------------------------------------------------------------------
+  # OS image builds (ImageBuild -> Tekton)
+  # ---------------------------------------------------------------------------
+  osBuilds:
+    # Deploy the Tekton tasks/pipelines for OS builds. Default: true
+    enabled: true
+
+    # Size of the per-build workspace PVC. Default: "8Gi"
+    # With usePVCScratchVolumes=true (default) the build cache, output and run dirs
+    # live on this PVC too, so size it generously.
+    pvcSize: "8Gi"
+
+    # StorageClass for build PVCs. Empty = cluster default.
+    storageClass: ""
+
+    # Put build scratch dirs (build-dir, output-dir, run-dir) on the workspace PVC
+    # instead of node-local emptyDir, to avoid exhausting node ephemeral storage.
+    # Default: true
+    usePVCScratchVolumes: true
+
+    # Use tmpfs (memory-backed emptyDir) volumes. Default: false
+    # NOTE: when usePVCScratchVolumes is true only the container-storage volume
+    # becomes tmpfs; build-dir/run-dir/output-dir stay on the PVC. Set
+    # usePVCScratchVolumes: false to put all scratch dirs in memory.
+    # (There is no "useMemoryContainerStorage" field - it does not exist in the CRD.)
+    useMemoryVolumes: false
+
+    # sizeLimit for each tmpfs volume; only used when useMemoryVolumes is true.
+    # Counts against the build pod's memory. Empty = no explicit limit.
+    memoryVolumeSize: "2Gi"
+
+    # RuntimeClass for build pods (e.g. for kata/sandboxed runtimes). Empty = default.
+    runtimeClassName: ""
+
+    # External route of the internal image registry, used by bootc/disk builds
+    # so nested containers can pull builder images. Empty = auto-detected from the
+    # OpenShift "default-route" Route in openshift-image-registry.
+    clusterRegistryRoute: "default-route-openshift-image-registry.apps.mycluster.example.com"
+
+    # Skip TLS verification for OCI registry operations (oras pushes etc.).
+    # Only for self-signed registries (CRC, kind). Default: false
+    insecureRegistry: false
+
+    # Experimental: HTTP(S) RPM prefetch with Hermeto for locked builds; RPM-only
+    # lockfiles then run AIB without network access. Default: false
+    hermetoPrefetch: false
+
+    # Minutes to wait for file uploads before the build fails. Default: 30
+    # (also raises the Build API route timeout to this value + 2 minutes)
+    uploadTimeoutMinutes: 30
+
+    # Timeout for the build-image pipeline task in minutes. Default: 90
+    buildTimeoutMinutes: 90
+
+    # Timeout for the flash-image pipeline task in minutes. Default: 240
+    flashTimeoutMinutes: 240
+
+    # Default lifetime of an ImageBuild (any phase, incl. in-progress), Go duration.
+    # "0" disables expiry. Builds annotated
+    # automotive.sdv.cloud.redhat.com/no-expire=true never expire. Default: "24h"
+    defaultBuildTTL: "24h"
+
+    # Maximum TTL a user may request per build. "0" or empty = no maximum.
+    maxBuildTTL: "168h"
+
+    # Expire unused builder-helper cache tags (Go duration, "0" disables).
+    # Default: "720h" (30 days)
+    builderCacheTTL: "720h"
+
+    # Lifetime in seconds of SA tokens used for internal registry auth during
+    # builds. Minimum 1. Default: 14400 (4 hours)
+    registryTokenLifetimeSeconds: 14400
+
+    # Node selector for build pods.
+    nodeSelector:
+      aib: "true"
+
+    # Tolerations for build pods (e.g. dedicated, tainted build nodes):
+    #   oc adm taint nodes <node> automotive.sdv.cloud.redhat.com/dedicated=builds:NoSchedule
+    tolerations:
+      - key: "automotive.sdv.cloud.redhat.com/dedicated"
+        operator: "Equal"
+        value: "builds"
+        effect: "NoSchedule"
+      - key: "node.kubernetes.io/dedicated"
+        operator: "Equal"
+        value: "automotive"
+        effect: "NoExecute"
+        tolerationSeconds: 3600
+
+    # Trusted CA bundle mounted into build tasks. Kind is ConfigMap or Secret, in
+    # the operator namespace. If unset, an optional ConfigMap "rhivos-ca-bundle"
+    # is mounted when present; if set, the object must exist or builds fail.
+    certificates:
+      trustedCABundle:
+        kind: ConfigMap
+        name: rhivos-ca-bundle
+
+    # Signed Tekton Bundle used for SecureBuild=true builds instead of the
+    # cluster-installed tasks. Empty = not used.
+    taskBundleRef: ""
+    # Verify cosign signatures of all task bundles (from here or from
+    # --task-bundle-ref). Requires taskBundleCosignKeyRef when true. Default: false
+    taskBundleVerify: false
+    # ConfigMap key holding the PEM cosign public key for bundle verification.
+    taskBundleCosignKeyRef:
+      name: tekton-bundle-cosign-pub
+      key: cosign.pub
+      optional: false
+
+  # ---------------------------------------------------------------------------
+  # Container builds
+  # ---------------------------------------------------------------------------
+  containerBuilds:
+    # Minutes to wait for source context uploads. Minimum 1. Default: 10
+    uploadTimeoutMinutes: 10
+    # Time after completion before a container build expires and its BuildRun is
+    # cleaned up (Go duration). "0" disables. Default: "24h"
+    defaultBuildTTL: "24h"
+
+  # ---------------------------------------------------------------------------
+  # Build API server (used by the caib CLI)
+  # ---------------------------------------------------------------------------
+  buildAPI:
+    # Max size of a single uploaded file, bytes. Default: 1073741824 (1 GiB)
+    maxUploadFileSize: 1073741824
+    # Max total upload size per request, bytes. Default: 2147483648 (2 GiB)
+    maxTotalUploadSize: 2147483648
+    # Max duration of a log stream, minutes. Default: 120
+    maxLogStreamDurationMinutes: 120
+    # Expiry of client tokens issued by the API, days. Default: 30
+    clientTokenExpiryDays: 30
+
+    # Resources for the build-api container.
+    # Default: requests cpu 50m / memory 64Mi, limits cpu 200m / memory 512Mi
+    resources:
+      buildAPI:
+        requests:
+          cpu: "50m"
+          memory: "64Mi"
+        limits:
+          cpu: "200m"
+          memory: "512Mi"
+        # Standard corev1.ResourceRequirements, so DRA claims are accepted too
+        # (same for workspaces.resources / maxResources):
+        # claims:
+        #   - name: gpu
+
+    authentication:
+      # OIDC client ID the caib CLI uses for login.
+      clientId: "caib-cli"
+
+      # Built-in token issuer. Prefix added to the subject of issued tokens.
+      internal:
+        prefix: "internal:"
+
+      # External JWT/OIDC authenticators (same semantics as the Kubernetes
+      # structured authentication config, apiserver.config.k8s.io/v1beta1).
+      jwt:
+        # Example 1: inline CA, claim-based mappings
+        - issuer:
+            url: "https://sso.example.com/auth/realms/EmployeeIDP"
+            # Override the discovery endpoint if it differs from url.
+            discoveryURL: ""
+            audiences:
+              - "caib-cli"
+              - "caib-web"
+            # Required by Kubernetes semantics when more than one audience is set.
+            audienceMatchPolicy: "MatchAny"
+            # "controlplane" or "cluster"; leave empty normally.
+            egressSelectorType: ""
+            # At most ONE of certificateAuthority / certificateAuthoritySecret /
+            # certificateAuthorityConfigMap may be set per issuer.
+            certificateAuthority: |
+              -----BEGIN CERTIFICATE-----
+              <PEM content>
+              -----END CERTIFICATE-----
+          claimMappings:
+            # Each of username/groups/uid takes either "claim" or "expression" (CEL).
+            username:
+              claim: "preferred_username"
+              prefix: ""
+            groups:
+              claim: "groups"
+              prefix: "oidc:"
+            uid:
+              claim: "sub"
+            extra:
+              - key: "example.com/department"
+                valueExpression: "claims.department"
+          claimValidationRules:
+            - claim: "email_verified"
+              requiredValue: "true"
+            - expression: "claims.exp - claims.nbf <= 86400"
+              message: "token lifetime must not exceed 24h"
+          userValidationRules:
+            - expression: "!user.username.startsWith('system:')"
+              message: "username must not use the reserved system: prefix"
+
+        # Example 2: CA from a Secret (re-read every ~60s, rotations picked up).
+        # A Secret in another namespace needs the build API granted "get" there.
+        - issuer:
+            url: "https://keycloak.example.com/realms/openshift"
+            audiences:
+              - "caib-cli"
+            certificateAuthoritySecret:
+              name: router-ca
+              namespace: openshift-ingress-operator  # empty = operator namespace
+              key: tls.crt
+          claimMappings:
+            username:
+              expression: "claims.preferred_username"
+
+        # Example 3: CA from a ConfigMap (same refresh/RBAC notes as Secret).
+        - issuer:
+            url: "https://keycloak2.example.com/realms/openshift"
+            audiences:
+              - "caib-cli"
+            certificateAuthorityConfigMap:
+              name: kube-root-ca.crt
+              namespace: kube-system  # empty = operator namespace
+              key: ca.crt
+          claimMappings:
+            username:
+              claim: "preferred_username"
+              prefix: ""
+
+  # ---------------------------------------------------------------------------
+  # Container images used by the operator (empty = built-in default)
+  # ---------------------------------------------------------------------------
+  images:
+    automotiveImageBuilder: "quay.io/centos-sig-automotive/automotive-image-builder:1.3.7"
+    yqHelper: "quay.io/konflux-ci/yq:latest"
+    gitClone: "quay.io/konflux-ci/task-runner@sha256:ba5789d2bc04146431e492083c67b86de26d5b17891dc27f67db850a397b66d3"
+    # Only used when osBuilds.hermetoPrefetch is true.
+    hermeto: "ghcr.io/hermetoproject/hermeto@sha256:8dc7d791fb7d874d208e145934e812e51736eea495fd2f11ad3a3acd5e831eff"
+    # Overridden by the OPERATOR_IMAGE env var on the operator deployment (set by OLM).
+    operator: "quay.io/rh-sdv-cloud/automotive-dev-operator:latest"
+    # Only used when the OCIVolumes feature gate is enabled.
+    oras: "ghcr.io/oras-project/oras:v1.2.0"
+
+  # ---------------------------------------------------------------------------
+  # Jumpstarter device flashing
+  # ---------------------------------------------------------------------------
+  jumpstarter:
+    # Image for Jumpstarter CLI operations. Default below.
+    image: "quay.io/jumpstarter-dev/jumpstarter:latest"
+    # Namespace where Jumpstarter is installed.
+    namespace: "jumpstarter-lab"
+    # Default lease duration, HH:MM:SS; overridable per ImageBuild. Default: "03:00:00"
+    defaultLeaseDuration: "03:00:00"
+    # Comma-separated key=value tags on every lease. Default: "platform=caib"
+    defaultLeaseTags: "platform=caib"
+    # Build target -> exporter selector (+ optional flash command template).
+    targetMappings:
+      j784s4evm:
+        selector: "board-type=j784s4evm"
+        flashCmd: "j storage flash ${IMAGE}"
+      qemu:
+        selector: "board-type=qemu"
+
+  # ---------------------------------------------------------------------------
+  # Developer workspaces
+  # ---------------------------------------------------------------------------
+  workspaces:
+    # Default: "quay.io/rh-sdv-cloud/autosd-toolchain:latest" (always allowed)
+    toolchainImage: "quay.io/rh-sdv-cloud/autosd-toolchain:latest"
+    # Default target architecture. Default: "arm64"
+    defaultArchitecture: "arm64"
+    # Workspace PVC size. Default: "10Gi"
+    pvcSize: "10Gi"
+    # Build cache PVC size. Default: "20Gi"
+    buildCacheSize: "20Gi"
+    # StorageClass for workspace PVCs. Empty = cluster default.
+    storageClass: ""
+    # Default requests/limits for workspace containers.
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        cpu: "2"
+        memory: "4Gi"
+    # Upper bound on what users may request (limits.cpu / limits.memory are enforced).
+    maxResources:
+      limits:
+        cpu: "8"
+        memory: "16Gi"
+    nodeSelector:
+      node-role.kubernetes.io/worker: ""
+    tolerations:
+      - key: "automotive.sdv.cloud.redhat.com/dedicated"
+        operator: "Equal"
+        value: "workspaces"
+        effect: "NoSchedule"
+    # Allow users to opt in (caib ... --tmpfs) to a tmpfs /tmp/build. Default: false
+    tmpfsBuildDir: false
+    # Idle minutes before auto-pause; must be > 0. Default: 30
+    # (disable per workspace with spec.autoPauseTimeoutMinutes: 0)
+    autoPauseTimeoutMinutes: 30
+
+    # Durable command ("run") limits. Only the timeout can be overridden per run.
+    runDefaultTimeoutMinutes: 120   # 1..1440, default 120
+    runMaxTimeoutMinutes: 1440      # 1..1440, default 1440
+    runRetentionDays: 7             # 1..30,   default 7
+    runMaxRecords: 1000             # 1..1000, default 1000
+    runMaxLogSizeMiB: 100           # >=1,     default 100
+    runCompletedLogBudgetMiB: 1024  # >=1,     default 1024 (also capped at 10% of the PVC)
+
+    # Pull secrets for private workspace images.
+    imagePullSecrets:
+      - name: workspace-pull-secret
+    # Extra images users may run: exact refs or prefix globs ending in "/*".
+    # Empty = only toolchainImage.
+    allowedImages:
+      - "quay.io/rh-sdv-cloud/*"
+      - "registry.example.com/team/custom-toolchain:1.0"
+    # Require cosign signatures on workspace images. Requires imageCosignKeyRef
+    # when true. Default: false
+    imageVerify: false
+    imageCosignKeyRef:
+      name: workspace-cosign-pub
+      key: cosign.pub
+      optional: false
+
+  # ---------------------------------------------------------------------------
+  # Prometheus ServiceMonitor (needs user-workload-monitoring)
+  # ---------------------------------------------------------------------------
+  monitoring:
+    enabled: false      # default false
+    interval: "30s"     # default "30s"
+
+  # ---------------------------------------------------------------------------
+  # OpenTelemetry tracing (read by the operator at startup)
+  # ---------------------------------------------------------------------------
+  tracing:
+    enabled: false
+    # OTLP gRPC endpoint. Empty = OTEL_EXPORTER_OTLP_ENDPOINT env var.
+    endpoint: "otel-collector.observability.svc:4317"
+    # Plaintext gRPC. Default: true; set false for TLS backends.
+    insecure: true
+    # Fraction of traces sampled, "0".."1". Default: "1"
+    samplingRatio: "1"
+
+  # ---------------------------------------------------------------------------
+  # Outbound webhook notifications (needs featureGates.WebhookNotifications: true)
+  # ---------------------------------------------------------------------------
+  webhookNotifications:
+    # Allow plain http:// receivers - development only. Default: false
+    allowHTTP: false
+    # Per-attempt timeout, 1..120 s. Default: 10
+    timeoutSeconds: 10
+    # Delivery attempts, 1..1000. Default: 8
+    maxAttempts: 8
+    # Give up after this many seconds, 60..604800. Default: 86400
+    deliveryWindowSeconds: 86400
+    # Explicitly permit internal destinations (blocked by default).
+    outboundPolicy:
+      # Exact hostnames, no wildcards (max 128).
+      allowedHostnames:
+        - "hooks.internal.example.com"
+      # CIDR ranges (max 128).
+      allowedCIDRs:
+        - "10.20.0.0/16"
+      # Same-namespace ConfigMap with key ca-bundle.crt for receiver TLS.
+      trustedCAConfigMap: "webhook-receiver-ca"
