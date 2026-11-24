@@ -3,9 +3,12 @@ kind: OperatorConfig
 metadata:
   labels:
     app.kubernetes.io/name: automotive-dev-operator
-  name: auto-builder
+  name: config
   namespace: "{{ platform_builder_namespace }}"
 spec:
+  workspaces:
+    buildCacheSize: "40Gi"
+
   # OSBuilds configuration for OS build operations
   osBuilds:
     # Enable Tekton tasks for OS builds
