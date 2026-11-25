@@ -1,5 +1,6 @@
 
 - name: delete default operator config
+  ignore_errors: true
   shell: |
     oc delete operatorconfig config \
       -n {{ platform_builder_namespace }} \
